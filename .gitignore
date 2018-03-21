@@ -19,7 +19,6 @@ examples/mine/
 examples/plot/
 examples/indi_plot/
 src/main/resources/log4j.properties
-*.jar
 *.orig
 master/dependency-reduced-pom.xml
 shaded/dependency-reduced-pom.xml

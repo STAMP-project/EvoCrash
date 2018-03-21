@@ -1,0 +1,7 @@
+Version: 2.0
+
+
+Bug Report URL: https://issues.apache.org/jira/browse/COLLECTIONS-4
+
+
+Source Code: http://archive.apache.org/dist/commons/collections/source/collections-2.0-src.zip
