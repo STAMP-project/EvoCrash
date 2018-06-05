@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -44,7 +44,6 @@ import org.evosuite.runtime.classhandling.JDKClassResetter;
 import org.evosuite.runtime.sandbox.Sandbox;
 import org.evosuite.runtime.util.JarPathing;
 import org.evosuite.testcase.TestCase;
-import org.evosuite.utils.LoggingUtils;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.slf4j.Logger;
@@ -221,7 +220,7 @@ public class JUnitAnalyzer {
 
 				logger.warn("Found unstable test named " + testName + " -> "
 				        + failure.getExceptionClassName() + ": " + failure.getMessage());
-				LoggingUtils.getEvoLogger().info("Found unstable test named " + testName + " -> "+ failure.getExceptionClassName() + ": " + failure.getMessage());
+				
 				for (String elem : failure.getExceptionStackTrace()) {
 					logger.info(elem);
 				}
@@ -231,7 +230,6 @@ public class JUnitAnalyzer {
 				for (int i = 0; i < tests.size(); i++) {
 					if (TestSuiteWriterUtils.getNameOfTest(tests, i).equals(testName)) {
 						logger.warn("Failing test:\n " + tests.get(i).toCode());
-						LoggingUtils.getEvoLogger().info("Failing test:\n " + tests.get(i).toCode());
 						numUnstable++;
 						/*
 						 * we have a match. should we remove it or mark as unstable?

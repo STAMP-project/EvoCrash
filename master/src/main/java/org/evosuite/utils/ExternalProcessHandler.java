@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -525,7 +525,6 @@ public class ExternalProcessHandler {
 								+ Properties.TARGET_CLASS
 								+ ". Error when reading message. Likely the client has crashed. Error message: "
 								+ e.getMessage());
-						LoggingUtils.getEvoLogger().info("* Error Message:"+ e.getMessage());
 						message = Messages.FINISHED_COMPUTATION;
 						data = null;
 					}

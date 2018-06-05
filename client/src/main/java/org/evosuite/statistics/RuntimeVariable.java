@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -167,8 +167,8 @@ public enum RuntimeVariable {
     LineFitnessTimeline,
     LineCoverageTimeline,
     LineCoverageBitString,
-	/** The obtained crash coverage */
-	CrashCoverage,
+    /** The obtained crash coverage */
+    CrashCoverage,
     CrashFitnessTimeline,
     CrashCoverageTimeline,
     CrashCoverageBitString,
@@ -381,7 +381,12 @@ public enum RuntimeVariable {
 	/** How many SAT queries led to Useful (i.e. better fitness) new tests*/ 
 	NumberOfUsefulNewTests,
 	/** How many SAT queries led to Unuseful (i.e. no better fitness) new tests*/ 
-	NumberOfUnusefulNewTests
+	NumberOfUnusefulNewTests,
+	
+	/* -------------------------------------------------------------------- */
+	/** Search budget needed to reach the maximum coverage */ 
+	/** Used in the comparison between LISP and MOSA */
+	Time2MaxCoverage
 	
 	;
 	/* -------------------------------------------------- */

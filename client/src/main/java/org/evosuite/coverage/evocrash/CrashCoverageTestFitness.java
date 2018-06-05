@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+
 /**
  * Fitness function for a single test
  *
@@ -49,7 +50,9 @@ public class CrashCoverageTestFitness extends TestFitnessFunction  {
 
 	private static final long serialVersionUID = 5063274349559091258L;
 	private static Logger logger = LoggerFactory.getLogger(CrashCoverageTestFitness.class);
-	// a Singleton class which saves all of the coverage histories.
+	CrashCoveragesHistory coverages = CrashCoveragesHistory.getInstance();
+
+
 	Throwable targetException;
 	public static StackTraceElement [] targetStackTrace;
 
@@ -64,7 +67,7 @@ public class CrashCoverageTestFitness extends TestFitnessFunction  {
 
 	/**
 	 * Constructor - fitness is specific to a method
-	 * @param methodIdentifier
+	 * @param targetExcep
 	 * @param exceptionClass
 	 * @throws IllegalArgumentException
 	 */
@@ -85,29 +88,46 @@ public class CrashCoverageTestFitness extends TestFitnessFunction  {
 
 	@Override
 	public double getFitness(TestChromosome individual, ExecutionResult result) {
+		CrashCoverageInfos coverageinfo = CrashCoverageInfos.getInstance();
 
-		if(CrashCoverageInfos.getInstance().getnumberOfTries() > Properties.SEARCH_BUDGET){
-			long startTime = CrashCoverageInfos.getInstance().getStartTime();
-			long endTime = System.currentTimeMillis();
-			long totalTime = (endTime - startTime)/1000;
-			LoggingUtils.getEvoLogger().info(">>>>>>>>>>>>>>>>>>>>>>>>>>>GGA was done in " + totalTime+ "!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-			long FFTimePassed = CrashCoverageInfos.getInstance().getFFTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-			LoggingUtils.getEvoLogger().info("* Fitness Function/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getFitnessFunctionMin()+"/"+FFTimePassed+"/"+CrashCoverageInfos.getInstance().getFFTries());
-			long LCTimePassed = CrashCoverageInfos.getInstance().getLCTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-			LoggingUtils.getEvoLogger().info("* LineCoverage Fitness/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getLineCoverageMin()+"/"+LCTimePassed+"/"+CrashCoverageInfos.getInstance().getLCTries());
-			long EHTimePassed = CrashCoverageInfos.getInstance().getEHTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-			LoggingUtils.getEvoLogger().info("* Exception Happened/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getExceptionHappenedMin()+"/"+EHTimePassed+"/"+CrashCoverageInfos.getInstance().getEHTries());
-			long SSTimePassed = CrashCoverageInfos.getInstance().getSSTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-			LoggingUtils.getEvoLogger().info("* Stack Trace Similarity/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getStackTraceSimilarityMin()+"/"+SSTimePassed+"/"+CrashCoverageInfos.getInstance().getSSTries());
-			LoggingUtils.getEvoLogger().info("* number of total tries: "+ CrashCoverageInfos.getInstance().getnumberOfTries());
-			LoggingUtils.getEvoLogger().info("* Computation finished");
-//			notifySearchFinished();
+		coverageinfo.numberOfTriesPP();
+		if(coverageinfo.getnumberOfTries() % 1000 == 0){
+			LoggingUtils.getEvoLogger().info("* Evals: "+coverageinfo.getnumberOfTries());
 		}
+
 		double currentFitnessValue = 0;
 		double lineFitness = 1;
 		double hasDeclaredException = 1;
 		double stackFitness = 1;
 
+		// we want to save all of the new coverages
+		boolean isNew = true;
+		for(int z = 0; z< coverages.getSize(); z++) {
+				if(coverages.getCoverages().get(z).equals(result.getTrace().getAllCoveredLines().toString())) {
+						isNew = false;
+						break;
+					}
+			}
+		if (isNew) {
+			// if we have a new coverage.
+			//1- add this new coverage to history ( for next runs)
+			coverages.getCoverages().add(result.getTrace().getAllCoveredLines().toString());
+			// 2- give infos of new coverage.
+			LoggingUtils.getEvoLogger().info("NEW Branch coverage:");
+			LoggingUtils.getEvoLogger().info("Coverage info:"+ result.getTrace().getCoverageData().toString());
+			LoggingUtils.getEvoLogger().info("line Coverage:"+ result.getTrace().getAllCoveredLines().toString());
+			if(result.getPositionsWhereExceptionsWereThrown().size()>0) {
+				int index = result.getFirstPositionOfThrownException();
+				Throwable thrownException = result.getExceptionThrownAtPosition(index);
+				LoggingUtils.getEvoLogger().info("* EvoCrash: the generated stack trace:" );
+				LoggingUtils.getEvoLogger().info("type of exception: "+thrownException.getClass());
+				for (int i1=0; i1<thrownException.getStackTrace().length; i1++){
+						LoggingUtils.getEvoLogger().info("" + thrownException.getStackTrace()[i1]);
+					}
+			}else {
+						LoggingUtils.getEvoLogger().info("No Exception!");
+			}
+			}
 		int targetLength = targetStackTrace.length;
 		className = targetStackTrace[targetLength-1].getClassName();
 		lineNumber = targetStackTrace[targetLength-1].getLineNumber();
@@ -155,36 +175,37 @@ public class CrashCoverageTestFitness extends TestFitnessFunction  {
 			}
 		}
 
-		if (CrashCoverageInfos.getInstance().getLineCoverageMin() > lineFitness) {
-			CrashCoverageInfos.getInstance().setLineCoverageMin(lineFitness);
-			CrashCoverageInfos.getInstance().setLCTime(System.currentTimeMillis());
-			CrashCoverageInfos.getInstance().setLCTries();
-			LoggingUtils.getEvoLogger().info("*************** New lineFitness: " + lineFitness);
-		}
+		if (coverageinfo.getLineCoverageMin() > lineFitness) {
+			coverageinfo.setLineCoverageMin(lineFitness);
+			coverageinfo.setLCTime(System.currentTimeMillis());
+			coverageinfo.setLCTries();
+				LoggingUtils.getEvoLogger().info("*************** New lineFitness: " + lineFitness + " -- " + coverageinfo.getnumberOfTries() + " -- " + coverageinfo.getLCDuration());
+			}
 
-		if (CrashCoverageInfos.getInstance().getStackTraceSimilarityMin() > stackFitness) {
-			CrashCoverageInfos.getInstance().setStackTraceSimilarityMin(stackFitness);
-			CrashCoverageInfos.getInstance().setSSTime(System.currentTimeMillis());
-			CrashCoverageInfos.getInstance().setSSTries();
-		}
+				if (coverageinfo.getStackTraceSimilarityMin() > stackFitness) {
+					coverageinfo.setStackTraceSimilarityMin(stackFitness);
+					coverageinfo.setSSTime(System.currentTimeMillis());
+					coverageinfo.setSSTries();
+					LoggingUtils.getEvoLogger().info("*************** New stackFitness: " + stackFitness + " -- "+ coverageinfo.getnumberOfTries() + " -- " + coverageinfo.getSSDuration());
+			}
 
-		if (CrashCoverageInfos.getInstance().getExceptionHappenedMin() > hasDeclaredException) {
-			CrashCoverageInfos.getInstance().setExceptionHappenedMin(hasDeclaredException);
-			CrashCoverageInfos.getInstance().setEHTime(System.currentTimeMillis());
-			CrashCoverageInfos.getInstance().setEHTries();
-		}
+				if (coverageinfo.getExceptionHappenedMin() > hasDeclaredException) {
+					coverageinfo.setExceptionHappenedMin(hasDeclaredException);
+					coverageinfo.setEHTime(System.currentTimeMillis());
+					coverageinfo.setEHTries();
+					LoggingUtils.getEvoLogger().info("*************** New exceptionFitness: " + hasDeclaredException + " -- "+ coverageinfo.getnumberOfTries() + " -- " + coverageinfo.getEHDuration());
+			}
 
 		currentFitnessValue =  3 * lineFitness  + 2 * hasDeclaredException + stackFitness;
 
-		if (CrashCoverageInfos.getInstance().getFitnessFunctionMin() > currentFitnessValue) {
-			CrashCoverageInfos.getInstance().setFitnessFunctionMin(currentFitnessValue);
-			CrashCoverageInfos.getInstance().setFFTime(System.currentTimeMillis());
-			CrashCoverageInfos.getInstance().setFFTries();
-			LoggingUtils.getEvoLogger().info("*************** New currentFitness: " + currentFitnessValue );
-		}
+		if (coverageinfo.getFitnessFunctionMin() > currentFitnessValue) {
+			coverageinfo.setFitnessFunctionMin(currentFitnessValue);
+			coverageinfo.setFFTime(System.currentTimeMillis());
+			coverageinfo.setFFTries();
+			LoggingUtils.getEvoLogger().info("*************** New currentFitness: " + currentFitnessValue + " -- "+ coverageinfo.getnumberOfTries() + " -- " + coverageinfo.getFFDuration());
+			}
 
 		logger.debug((3*lineFitness)+" "+(2*hasDeclaredException)+" "+stackFitness);
-
 		individual.setFitness(this, currentFitnessValue);
 		updateIndividual(this, individual, currentFitnessValue);
 		//LoggingUtils.getEvoLogger().info("currentFitness: " + currentFitnessValue + "\n");

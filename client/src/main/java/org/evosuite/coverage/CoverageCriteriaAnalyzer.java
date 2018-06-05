@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -66,8 +66,7 @@ public class CoverageCriteriaAnalyzer {
 
     private static void reinstrument(TestSuiteChromosome testSuite, Properties.Criterion criterion) {
 
-        if (Properties.SECONDARY_OBJECTIVE.toLowerCase().contains("ibranch")
-                || Properties.SECONDARY_OBJECTIVE.toLowerCase().contains("archiveibranch")) {
+        if (ArrayUtil.contains(Properties.SECONDARY_OBJECTIVE, Properties.SecondaryObjective.IBRANCH)) {
             ExecutionTracer.enableContext();
         }
         if (!ExecutionTracer.isTraceCallsEnabled()) {

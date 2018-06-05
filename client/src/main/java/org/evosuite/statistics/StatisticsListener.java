@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -32,6 +32,7 @@ import org.evosuite.ga.stoppingconditions.MaxTestsStoppingCondition;
 import org.evosuite.rmi.ClientServices;
 import org.evosuite.runtime.sandbox.Sandbox;
 import org.evosuite.testsuite.TestSuiteChromosome;
+import org.evosuite.utils.LoggingUtils;
 
 /**
  * Client-side listener that transmits data to master
@@ -69,8 +70,12 @@ public class StatisticsListener implements SearchListener {
 					try {
 						individual = individuals.take();
 						StatisticsSender.sendIndividualToMaster(individual);
-					} catch (InterruptedException e) {
+					} catch (Throwable e) {
 						done = true;
+						for (int i =0; i<=e.getStackTrace().length;i++){
+							LoggingUtils.getEvoLogger().info(e.getStackTrace()[i].toString());
+						}
+
 					}
 				}
 			}

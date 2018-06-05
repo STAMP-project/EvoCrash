@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -35,6 +35,7 @@ import org.evosuite.result.TestGenerationResultBuilder;
 import org.evosuite.rmi.MasterServices;
 import org.evosuite.rmi.service.ClientNodeRemote;
 import org.evosuite.runtime.util.JarPathing;
+import org.evosuite.runtime.util.JavaExecCmdUtil;
 import org.evosuite.statistics.SearchStatistics;
 import org.evosuite.utils.ExternalProcessHandler;
 import org.evosuite.utils.LoggingUtils;
@@ -49,15 +50,15 @@ import java.util.*;
 public class TestGeneration {
 
 	private static Logger logger = LoggerFactory.getLogger(TestGeneration.class);
-
+	
 	public static List<List<TestGenerationResult>> executeTestGeneration(Options options, List<String> javaOpts,
 			CommandLine line) {
-
+		
 		Strategy strategy = getChosenStrategy(javaOpts, line);
-
+		
 		if (strategy == null) {
 			strategy = Strategy.EVOSUITE;
-		}
+		} 
 
 		List<List<TestGenerationResult>> results = new ArrayList<List<TestGenerationResult>>();
 
@@ -78,9 +79,9 @@ public class TestGeneration {
 			results.addAll(generateTests(strategy, line.getOptionValue("class"), javaOpts));
 		} else if (line.hasOption("prefix")){
 			results.addAll(generateTestsPrefix(strategy, line.getOptionValue("prefix"),javaOpts));
-		} else if (line.hasOption("target")) {
+		} else if (line.hasOption("target")) {			
 			String target = line.getOptionValue("target");
-			results.addAll(generateTestsTarget(strategy, target, javaOpts));
+			results.addAll(generateTestsTarget(strategy, target, javaOpts));			
 		} else if (EvoSuite.hasLegacyTargets()){
 			results.addAll(generateTestsLegacy(strategy, javaOpts));
 		} else {
@@ -96,7 +97,7 @@ public class TestGeneration {
 	private static List<List<TestGenerationResult>> generateTestsLegacy(Properties.Strategy strategy,
 	        List<String> args) {
 	    List<List<TestGenerationResult>> results = new ArrayList<List<TestGenerationResult>>();
-
+		
 		ClassPathHandler.getInstance().getTargetProjectClasspath();
 		LoggingUtils.getEvoLogger().info("* Using .task files in "
 		                                         + Properties.OUTPUT_DIR
@@ -106,16 +107,16 @@ public class TestGeneration {
 		for (File file : FileUtils.listFiles(directory, extensions, false)) {
 			results.addAll(generateTests(strategy, file.getName().replace(".task", ""), args));
 		}
-
+		
 		return results;
 	}
-
+	
 	public static Option[] getOptions(){
 		return new Option[]{
 				new Option("generateSuite", "use whole suite generation. This is the default behavior"),
 				new Option("generateTests", "use individual test generation (old approach for reference purposes)"),
 				new Option("generateRandom", "use random test generation"),
-				new Option("generateNumRandom",true, "generate fixed number of random tests"),
+				new Option("generateNumRandom",true, "generate fixed number of random tests"),	
 				new Option("regressionSuite", "generate a regression test suite"),
 				new Option("regressionTests", "generate a regression test suite of individual tests"),
 				new Option("generateMOSuite", "use many objective test generation (MOSA). "),
@@ -128,6 +129,10 @@ public class TestGeneration {
 		if (javaOpts.contains("-Dstrategy="+Strategy.ENTBUG.name())
 				&& line.hasOption("generateTests")) {
 			strategy = Strategy.ENTBUG;
+			// TODO: Find a better way to integrate this
+		} else if(javaOpts.contains("-Dstrategy="+Strategy.NOVELTY.name())) {
+			// TODO: Find a better way to integrate this
+			strategy = Strategy.NOVELTY;
 		} else if (line.hasOption("generateTests")) {
 			strategy = Strategy.ONEBRANCH;
 		} else if (line.hasOption("generateSuite")) {
@@ -147,14 +152,14 @@ public class TestGeneration {
 		}
 		return strategy;
 	}
-
+	
 	private static List<List<TestGenerationResult>> generateTestsPrefix(Properties.Strategy strategy, String prefix,
 	        List<String> args) {
 	    List<List<TestGenerationResult>> results = new ArrayList<List<TestGenerationResult>>();
-
+		
 		String cp = ClassPathHandler.getInstance().getTargetProjectClasspath();
 		Set<String> classes = new HashSet<String>();
-
+		
 		for (String classPathElement : cp.split(File.pathSeparator)) {
 			classes.addAll(ResourceList.getInstance(TestGenerationContext.getInstance().getClassLoaderForSUT()).getAllClasses(classPathElement, prefix, false));
 			try {
@@ -190,7 +195,7 @@ public class TestGeneration {
 		}
 		return results;
 	}
-
+	
 	private static boolean findTargetClass(String target) {
 
 		if (ResourceList.getInstance(TestGenerationContext.getInstance().getClassLoaderForSUT()).hasClass(target)) {
@@ -202,12 +207,12 @@ public class TestGeneration {
 
 		return false;
 	}
-
+	
 	private static List<List<TestGenerationResult>> generateTests(Properties.Strategy strategy, String target,
 	        List<String> args) {
-
+		
 		LoggingUtils.getEvoLogger().info("* Going to generate test cases for class: "+target);
-
+		
 		if (!findTargetClass(target)) {
 		    return Arrays.asList(Arrays.asList(new TestGenerationResult[]{TestGenerationResultBuilder.buildErrorResult("Could not find target class") }));
 		}
@@ -221,7 +226,7 @@ public class TestGeneration {
 		}
 
 		List<String> cmdLine = new ArrayList<>();
-		cmdLine.add(EvoSuite.JAVA_CMD);
+		cmdLine.add(JavaExecCmdUtil.getJavaBinExecutablePath(true)/*EvoSuite.JAVA_CMD*/);
 
 		handleClassPath(cmdLine);
 
@@ -242,7 +247,7 @@ public class TestGeneration {
 		}
 		cmdLine.add("-Dlogback.configurationFile="+LoggingUtils.getLogbackFileName());
 		cmdLine.add("-Dlog4j.configuration=SUT.log4j.properties");
-
+		
 		/*
 		 * FIXME: following 3 should be refactored, as not particularly clean.
 		 * First 2 does not work for master, as logback is read
@@ -253,14 +258,14 @@ public class TestGeneration {
 		}
 		if(Properties.LOG_TARGET!=null){
 			cmdLine.add("-Dlog.target=" + Properties.LOG_TARGET);
-		}
+		}		
 		String logDir = System.getProperty("evosuite.log.folder");
 		if(logDir!=null){
 			// this parameter is for example used in logback-ctg.xml
 			cmdLine.add(" -Devosuite.log.folder="+logDir);
 		}
 		//------------------------------------------------
-
+		
 		cmdLine.add("-Djava.library.path=lib");
 		// cmdLine.add("-Dminimize_values=true");
 
@@ -301,8 +306,7 @@ public class TestGeneration {
 
 		cmdLine.add("-XX:ParallelGCThreads=1");
 		cmdLine.add("-Xmx4G");
-
-
+		
 		for (String arg : args) {
 			if (!arg.startsWith("-DCP=")) {
 				cmdLine.add(arg);
@@ -334,6 +338,9 @@ public class TestGeneration {
 		case DSE:
 			cmdLine.add("-Dstrategy=Dynamic_Symbolic_Execution");
 			break;
+		case NOVELTY:
+			cmdLine.add("-Dstrategy=Novelty");
+			break;
 		default:
 			throw new RuntimeException("Unsupported strategy: " + strategy);
 		}
@@ -352,10 +359,10 @@ public class TestGeneration {
 		Properties.TARGET_CLASS = target;
 		Properties.PROCESS_COMMUNICATION_PORT = port;
 
-
+		
 		/*
 		 *  FIXME: refactor, and double-check if indeed correct
-		 *
+		 * 
 		 * The use of "assertions" in the client is pretty tricky, as those properties need to be transformed into JVM options before starting the
 		 * client. Furthermore, the properties in the property file might be overwritten from the commands coming from shell
 		 */
@@ -447,16 +454,7 @@ public class TestGeneration {
 		}
 
 		handler.setBaseDir(EvoSuite.base_dir_path);
-//		System.err.println(EvoSuite.base_dir_path);
-		String str="";
-		for (int i=0;i< newArgs.length;i++){
-			str+=newArgs[i]+" ";
-
-		}
-		LoggingUtils.getEvoLogger().error(str);
-//		System.err.println();
-		//LoggingUtils.getEvoLogger().info(newArgs.length+"");
-		//System.exit(0);
+		
 		if (handler.startProcess(newArgs)) {
 
 			Set<ClientNodeRemote> clients = null;
@@ -466,8 +464,8 @@ public class TestGeneration {
 			} catch (InterruptedException e) {
 			}
 			if (clients == null) {
-				logger.error("Not possible to access to clients. Clients' state: "+handler.getProcessState() +
-						". Master registry port: "+MasterServices.getInstance().getRegistryPort());
+				logger.error("Not possible to access to clients. Clients' state: "+handler.getProcessState() + 
+						". Master registry port: "+MasterServices.getInstance().getRegistryPort());											
 			} else {
 				/*
 				 * The clients have started, and connected back to Master.
@@ -482,24 +480,24 @@ public class TestGeneration {
 				}
 
 				int time = TimeController.getInstance().calculateForHowLongClientWillRunInSeconds();
-				handler.waitForResult(time * 1000);
+				handler.waitForResult(time * 1000); 
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
 				}
 			}
-
+			
 			if (Properties.CLIENT_ON_THREAD) {
 				handler.stopAndWaitForClientOnThread(10000);
 			}
-
+			
 			handler.killProcess();
 		} else {
 			LoggingUtils.getEvoLogger().info("* Could not connect to client process");
 		}
 
 		boolean hasFailed = false;
-
+		
 		if (Properties.NEW_STATISTICS) {
 			if(MasterServices.getInstance().getMasterNode() == null) {
 				logger.error("Cannot write results as RMI master node is not running");
@@ -509,7 +507,7 @@ public class TestGeneration {
 				hasFailed = !written;
 			}
 		}
-
+		
 		/*
 		 * FIXME: it is unclear what is the relation between TestGenerationResult and writeStatistics()
 		 */
@@ -527,7 +525,7 @@ public class TestGeneration {
 			}
 			logUtils.closeLogServer();
 		}
-
+		
 		logger.debug("Master process has finished to wait for client");
 
 		//FIXME: tmp hack till understood what TestGenerationResult is...
@@ -536,7 +534,7 @@ public class TestGeneration {
 			//note: cannot throw exception because would require refactoring of many SystemTests
 			return new ArrayList<List<TestGenerationResult>>();
 		}
-
+		
 		return results;
 	}
 
@@ -570,9 +568,9 @@ public class TestGeneration {
 	        List<String> args) {
 	    List<List<TestGenerationResult>> results = new ArrayList<List<TestGenerationResult>>();
 		String cp = ClassPathHandler.getInstance().getTargetProjectClasspath();
-
+		
 		Set<String> classes = ResourceList.getInstance(TestGenerationContext.getInstance().getClassLoaderForSUT()).getAllClasses(target, false);
-
+		
 		LoggingUtils.getEvoLogger().info("* Found " + classes.size()
 		                                         + " matching classes in target "
 		                                         + target);
@@ -604,7 +602,7 @@ public class TestGeneration {
 			LoggingUtils.getEvoLogger().info("* Current class: " + sut);
 			results.addAll(generateTests(strategy,sut,args));
 		}
-
+		
 		return results;
 	}
 }

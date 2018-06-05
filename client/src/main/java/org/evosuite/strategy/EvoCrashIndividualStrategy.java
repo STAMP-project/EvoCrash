@@ -30,14 +30,13 @@ import org.evosuite.ShutdownTestWriter;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.coverage.TestFitnessFactory;
 import org.evosuite.coverage.evocrash.CrashProperties;
-//import org.crash.client.CrashProperties;
-//import org.crash.client.rmi.ClientServices;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
 import org.evosuite.ga.stoppingconditions.MaxStatementsStoppingCondition;
 import org.evosuite.ga.stoppingconditions.StoppingCondition;
 import org.evosuite.result.TestGenerationResultBuilder;
 import org.evosuite.rmi.ClientServices;
+import org.evosuite.rmi.service.ClientState;
 import org.evosuite.statistics.RuntimeVariable;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.ExecutionTracer;
@@ -47,7 +46,6 @@ import org.evosuite.testsuite.TestSuiteChromosome;
 import org.evosuite.testsuite.TestSuiteFitnessFunction;
 import org.evosuite.testsuite.TestSuiteMinimizer;
 import org.evosuite.testsuite.factories.RootFixedSizeTestSuiteChromosomeFactory;
-//import org.crash.client.testsuite.factories.FixedSizeTestSuiteChromosomeFactory;
 import org.evosuite.utils.ArrayUtil;
 import org.evosuite.utils.LoggingUtils;
 import org.evosuite.utils.Randomness;
@@ -149,7 +147,11 @@ public class EvoCrashIndividualStrategy extends TestGenerationStrategy {
 				}
 				CrashProperties.getInstance();
 				GeneticAlgorithm<TestChromosome> ga = factory.getSearchAlgorithm();
-//			    TestGenerationResultBuilder.getInstance().setGeneticAlgorithm(ga);
+				//FIXME: this is a work around so ga is not null from the test results in JUnit tests.
+				// investigate why ga is null otherwise!
+//				if(Properties.SERIALIZE_GA || Properties.CLIENT_ON_THREAD){
+					TestGenerationResultBuilder.getInstance().setGeneticAlgorithm(ga);
+//				}
 
 				if (Properties.PRINT_CURRENT_GOALS)
 					LoggingUtils.getEvoLogger().info("* Searching for goal " + num + ": "
@@ -171,6 +173,7 @@ public class EvoCrashIndividualStrategy extends TestGenerationStrategy {
 				ga.addFitnessFunction(fitnessFunction);
 				// Perform search
 				logger.info("* Starting evolution for goal " + fitnessFunction);
+				ClientServices.getInstance().getClientNode().changeState(ClientState.SEARCH);
 				ga.generateSolution();
 				if (ga.getBestIndividual().getFitness() == 0.0) {
 					if (Properties.PRINT_COVERED_GOALS)
@@ -327,4 +330,4 @@ public class EvoCrashIndividualStrategy extends TestGenerationStrategy {
 		return suite;
 	}
 	
-}	
+} 

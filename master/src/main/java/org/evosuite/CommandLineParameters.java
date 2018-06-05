@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -195,22 +195,22 @@ public class CommandLineParameters {
 			System.setProperty(propertyName, propertyValue);
 
             try {
+//				Properties.getInstance().setValue(propertyName, propertyValue);
             	if (propertyName.equals("EXP")) {
-            		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else if (propertyName.equals("target_exception_crash")) {
-            		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else if (propertyName.equals("crashalgorithm")) {
-             		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else if (propertyName.equals("root_test_factory")) {
-             		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else if (propertyName.equals("target_frame")) {
-             		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else if (propertyName.equals("max_init_rounds")) {
-             		CrashProperties.getInstance().setValue(propertyName, propertyValue);
-            	} else {
-            		Properties.getInstance().setValue(propertyName, propertyValue);
-            	}
-				
+            			CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else if (propertyName.equals("target_exception_crash")) {
+               			CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else if (propertyName.equals("crashalgorithm")) {
+                 		CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else if (propertyName.equals("root_test_factory")) {
+                 		CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else if (propertyName.equals("target_frame")) {
+                 		CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else if (propertyName.equals("max_init_rounds")) {
+                 		CrashProperties.getInstance().setValue(propertyName, propertyValue);
+               	} else {
+                		Properties.getInstance().setValue(propertyName, propertyValue);
+               	}
 			} catch (Exception e) {
 				LoggingUtils.getEvoLogger().info("CMDP:   "+ propertyName+"  :  "+propertyValue + e.getMessage());
 				throw new Error("Invalid value for property " + propertyName+": "+propertyValue+". Exception "+e.getMessage(),e);

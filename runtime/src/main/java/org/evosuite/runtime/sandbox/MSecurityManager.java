@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -1292,8 +1292,8 @@ public class MSecurityManager extends SecurityManager {
 		String fontDir = USER_DIR+File.separator+".java"+File.separator+
 				"fonts"+File.separator+JAVA_VERSION;
 
-		if(action.equals("write") && 
-				fp.getName().startsWith(fontDir)) {
+		if(action.equals("write")) {
+			if(fp.getName().startsWith(fontDir)) {
 			/*
 			 * NOTE: this is a very tricky situation.
 			 * Issue arises in GUI classes like javax.swing.JComponent,
@@ -1313,7 +1313,40 @@ public class MSecurityManager extends SecurityManager {
 			 *   refactor/extend this class to handle AccessController.doPrivileged blocks.
 			 *        
 			 */
-			return true;
+				return true;
+			} else if(fp.getName().contains("jacoco")) {
+				/*
+				 * This is not 100% secure, but Jacoco support
+				 * is important
+				 */
+				for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+					if(e.getClassName().startsWith("org.jacoco.")) {
+						return true;
+					}
+				}
+			} else if(fp.getName().contains("clover")) {
+				/*
+				 * To make sure this is really clover trying to write a report
+				 * we also check that this is invoked by clover
+				 */
+				for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+					if(e.getClassName().startsWith("com.atlassian.clover.")) {
+						return true;
+					}
+				}
+			}
+		} else if(action.equals("delete")) {
+			if(fp.getName().contains("clover.db.liverec")) {
+				/*
+				 * To make sure this is really clover trying to write a report
+				 * we also check that this is invoked by clover
+				 */
+				for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+					if(e.getClassName().startsWith("com.atlassian.clover.")) {
+						return true;
+					}
+				}
+			}
 		}
 
 		return false;
