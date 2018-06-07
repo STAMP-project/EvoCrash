@@ -19,6 +19,7 @@
 
 package org.evosuite.coverage.evocrash;
 
+import com.google.gson.*;
 import org.evosuite.EvoSuite;
 import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
 import org.evosuite.result.TestGenerationResult;
@@ -27,9 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -46,6 +45,9 @@ public class LANG_6b_Test {
 
     @Test
     public void lang_6b_frameLevel_1(){
+        boolean accessed = true;
+
+
         int targetFrame = 3;
         String user_dir = System.getProperty("user.dir");
 
@@ -54,6 +56,9 @@ public class LANG_6b_Test {
 
         Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-6b" , "LANG-6b.log");
         String logPath = logpath.toString();
+
+        Path accessedClasses = Paths.get(user_dir,"accessed_classes.json");
+        String accessedClassesPath = accessedClasses.toString();
 
         File depFolder = new File(bin_path);
         File[] listOfFilesInSourceFolder = depFolder.listFiles();
@@ -74,6 +79,9 @@ public class LANG_6b_Test {
         String test_path = testpath.toString();
 
         String jUnits = "";
+
+        if (accessed){
+        // get all of the test cases for generating accessed_classes.json file
         for (String testJarAddr : testJars){
             try {
                 JarInputStream jarFile = new JarInputStream(new FileInputStream(testJarAddr));
@@ -88,13 +96,33 @@ public class LANG_6b_Test {
                         jUnits += (testClassPath + ":");
                     }
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             System.out.println(jUnits);
         }
+
+        }else {
+            // get the test cases from accessed_classes.json to use them for test case seeding or model seeding.
+            try {
+                JsonObject root = new JsonParser().parse(new FileReader(accessedClassesPath)).getAsJsonObject();
+                if (root.has(targetClass)) {
+                    JsonArray ja = root.get(targetClass).getAsJsonArray();
+                    for (int i = 0; i <= ja.size(); i++)
+                        jUnits += (ja.get(0) + ":");
+                } else {
+                    System.out.println("No Junits for class: " + targetClass);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            System.out.println(jUnits);
+        }
+
+
+
+
+
 
 
         String[] command = {
@@ -116,7 +144,7 @@ public class LANG_6b_Test {
                 "-Dmax_recursion=30",
                 "-Djunit="+jUnits,
                 "-Dmodel_sut=TRUE",
-                "-Dcollect_accessed_classes_in_tests=TRUE",
+                "-Dcollect_accessed_classes_in_tests="+accessed,
                 "-Dcarve_object_pool=TRUE",
                 "-Dp_object_pool=1.0",
                 "-Dseed_clone=0",
