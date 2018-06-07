@@ -154,6 +154,7 @@ public class CarvingRunListener extends RunListener {
 				continue;
 			}
 			test.setName(description.getMethodName());
+			test.setClassName(description.getClassName());
 			logger.info("Carved test of length " + test.size());
 			try {
 				test.changeClassLoader(TestGenerationContext.getInstance().getClassLoaderForSUT());
