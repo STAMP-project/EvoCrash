@@ -20,14 +20,16 @@
 package org.evosuite.ga.metaheuristics;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.util.*;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.evosuite.coverage.evocrash.CrashCoverageInfos;
 import org.evosuite.seeding.CallSequencesPoolManager;
 import org.evosuite.testcarver.extraction.CarvingManager;
+import org.evosuite.testcarver.testcase.CarvedTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
@@ -63,21 +65,27 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 	@Override
 	public void generateSolution() {
 
+
+		// ACCESED_CLASSES = True -> execute all of the test cases available and save tests of each of the classes in the project in a single JSON file (accessed_classes.json)
+		// The process will stop after exporting the JSON file.
 		if(Properties.ACCESED_CLASSES){
+			HashMap<String,List<String>> testsForClasses = new HashMap<String,List<String>>();
 			CarvingManager manager = CarvingManager.getInstance();
 			for(Class<?> targetClass : manager.getClassesWithTests()) {
 				List<TestCase> tests = manager.getTestsForClass(targetClass);
+				List<String> temp = new ArrayList<String>();
 				for(TestCase test : tests) {
-					LoggingUtils.getEvoLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~");
-					LoggingUtils.getEvoLogger().info("The test is: ");
-					LoggingUtils.getEvoLogger().info(test.toCode());
-					Set<Class<?>> accessed = test.getAccessedClasses();
-					LoggingUtils.getEvoLogger().info("Accessed classes:");
-					for (Class<?> c: accessed){
-						LoggingUtils.getEvoLogger().info(c.getName());
-					}
+					String testCaseName = ((CarvedTestCase)test).getClassName()+"."+((CarvedTestCase)test).getName();
+					temp.add(testCaseName);
 				}
+
+				testsForClasses.put(targetClass.getName(),temp);
 			}
+
+			try (Writer writer = new FileWriter("accessed_classes.json")) {
+				Gson gson = new GsonBuilder().create();
+				gson.toJson(testsForClasses, writer);
+			}catch (Exception e){}
 
 			System.exit(0);
 		}
