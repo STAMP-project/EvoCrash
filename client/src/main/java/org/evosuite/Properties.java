@@ -1555,15 +1555,19 @@ public class Properties {
 	// ---------------------------------------------------------------
 	// Modeling flag
 
-	@Parameter(key="model_sut", group= "SUT Modelling", description = "make modelling Enable")
+	@Parameter(key="model_sut", group= "SUT Modelling", description = "Make modelling Enable")
 	public static boolean MODEL_SUT= false;
 
 
-	// ---------------------------------------------------------------
-	// Modeling flag
-
-	@Parameter(key="collect_accessed_classes_in_tests", group= "SUT Modelling", description = "make modelling Enable")
+	@Parameter(key="collect_accessed_classes_in_tests", group= "SUT Modelling", description = "Collect accessed classes in test cases")
 	public static boolean ACCESED_CLASSES= false;
+
+	@Parameter(key="carve_model", group= "SUT Modelling", description = "Carve the generated model to object pool")
+	public static boolean CARVE_MODEL= false;
+
+	@Parameter(key = "model_path", group = "SUT Modelling", description = "path of the directory which contains SUT models")
+	public static String MODEL_PATH = null;
+
 
 	// ---------------------------------------------------------------
 	// Seeding test cases
