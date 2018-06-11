@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import be.vibes.dsl.io.Xml;
@@ -125,6 +126,73 @@ public class ObjectPoolManager extends ObjectPool {
 						LoggingUtils.getEvoLogger().info("Injecting the abstract test case transitions to EvoSuite TestCase object");
 						TestCase newTestCase = new DefaultTestCase();
 						GenericClass genericClass = null;
+						boolean addConstructor = true;
+
+						for (Transition transition : abstractTestCase) {
+							Action sequence = transition.getAction();
+							if (sequence.getName().indexOf(".") != -1) {
+								// Class name:
+								String className = sequence.getName().substring(0, sequence.getName().indexOf("("));
+								className = className.substring(0, className.lastIndexOf('.'));
+								// Method name:
+								String methodName = StringUtils.substringAfterLast(sequence.getName().substring(0, sequence.getName().indexOf("(")), ".");
+								String paramString = sequence.getName().substring(sequence.getName().indexOf("(") + 1);
+
+								if (methodName.equals("<init>")){
+									addConstructor =  false;
+									break;
+								}
+
+								Method target = null;
+								Class<?> sequenceClass = Class.forName(className, true, TestGenerationContext.getInstance().getClassLoaderForSUT());
+								Set<Method> methods = TestClusterUtils.getMethods(sequenceClass);
+								for (Method m : methods) {
+									if (m.getName().equals(methodName)) {
+										target = m;
+										break;
+									} else {
+										target = null;
+									}
+								}
+
+								if (target != null) {
+									GenericMethod genericMethod = new GenericMethod(target, sequenceClass);
+									if (!genericMethod.isStatic()){
+										break;
+									}
+								}
+							}
+
+						}
+
+						if (addConstructor){
+							Transition transition = abstractTestCase.getFirst();
+							Action sequence = transition.getAction();
+							String className = sequence.getName().substring(0, sequence.getName().indexOf("("));
+							className = className.substring(0, className.lastIndexOf('.'));
+							Class<?> sequenceClass = Class.forName(className, true, TestGenerationContext.getInstance().getClassLoaderForSUT());
+							Set<Constructor<?>> constructors = TestClusterUtils.getConstructors(sequenceClass);
+							int i = 0;
+							int chosenConstructorIndex = new Random().nextInt(constructors.size());
+							Constructor<?> chosenConstructor = null;
+							for (Constructor<?> c: constructors){
+								if (i==chosenConstructorIndex){
+									chosenConstructor = c;
+									break;
+								}
+								i++;
+							}
+							GenericConstructor genericConstructor = new GenericConstructor(chosenConstructor, sequenceClass);
+							try {
+								TestFactory.getInstance().addConstructor(newTestCase, genericConstructor, newTestCase.size(), 0);
+								LoggingUtils.getEvoLogger().info("constructor {} is added", genericConstructor.getName());
+							} catch (Exception e) {
+								LoggingUtils.getEvoLogger().info("Error in addidng " + genericConstructor.getName() + "  " + e.getMessage());
+							}
+
+
+						}
+
 						for (Transition transition : abstractTestCase) {
 							Action sequence = transition.getAction();
 							if (sequence.getName().indexOf(".") != -1) {
@@ -187,7 +255,7 @@ public class ObjectPoolManager extends ObjectPool {
 									} else if (targetC != null) {
 										GenericConstructor genericConstructor = new GenericConstructor(targetC, sequenceClass);
 										try {
-//											TestFactory.getInstance().addConstructor(newTestCase, genericConstructor, newTestCase.size(), 0);
+											TestFactory.getInstance().addConstructor(newTestCase, genericConstructor, newTestCase.size(), 0);
 											LoggingUtils.getEvoLogger().info("constructor {} is added", genericConstructor.getName());
 										} catch (Exception e) {
 											LoggingUtils.getEvoLogger().info("Error in addidng " + genericConstructor.getName() + "  " + e.getMessage());
