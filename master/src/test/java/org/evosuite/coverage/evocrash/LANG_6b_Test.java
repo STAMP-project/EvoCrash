@@ -51,11 +51,20 @@ public class LANG_6b_Test {
         int targetFrame = 3;
         String user_dir = System.getProperty("user.dir");
 
-        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","Lang-bins","LANG-6b");
+//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","Lang-bins","LANG-6b");
+        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-7.4");
         String bin_path = binpath.toString();
 
-        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-6b" , "LANG-6b.log");
+//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-6b" , "LANG-6b.log");
+        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
         String logPath = logpath.toString();
+
+        Path accessedOutput = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","accessed_classes.json");
+        String accessed_output_file = accessedOutput.toString();
+
+        Path CallSequencesOutput = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","CallSequencePoolJson.json");
+        String call_sequences_file = CallSequencesOutput.toString();
+
 
         Path accessedClasses = Paths.get(user_dir,"accessed_classes.json");
         String accessedClassesPath = accessedClasses.toString();
@@ -72,8 +81,8 @@ public class LANG_6b_Test {
                 dependencies += (dependency + ":");
             }
         }
-
         String targetClass = LogParser.getTargetClass(logPath, targetFrame);
+        System.out.println("target is: "+targetClass);
 
         Path testpath = Paths.get(user_dir, "GGA-tests");
         String test_path = testpath.toString();
@@ -128,7 +137,7 @@ public class LANG_6b_Test {
         String[] command = {
                 "-generateTests",
                 "-Dcriterion=CRASH",
-                "-Dsandbox=FALSE",
+                "-Dsandbox=TRUE",
                 "-Dtest_dir="+ test_path,
                 "-Drandom_tests=3",
                 "-Dminimize=TRUE",
@@ -142,17 +151,28 @@ public class LANG_6b_Test {
                 "-Dreport_dir=spreadsheets",
                 "-Dlog_goals=TRUE",
                 "-Dmax_recursion=30",
-                "-Dcarve_model=TRUE",
                 "-Dmodel_path=/Users/pooria/Desktop/CallSequencePoolJson",
+                "-Daccessed_classes_output_path="+accessed_output_file,
+                "-Dcall_Sequences_output_path="+call_sequences_file,
+                "-Dcarve_model=FALSE",
+                "-Djunit="+jUnits,
+                "-Dselected_junit=" + jUnits,
+                "-Dseed_mutations=0",
+                "-Dp_object_pool=0",
+                "-Dcarve_object_pool=TRUE",
+                "-Dcollect_accessed_classes_in_tests=False",
+                "-Dmodel_sut=TRUE",
+//                "-Dcarve_model=FALSE",
 //                "-Djunit="+jUnits,
-//                "-Dmodel_sut=TRUE",
-//                "-Dcollect_accessed_classes_in_tests=FALSE",
+//                "-Dselected_junit=" + jUnits,
+//                "-Dseed_mutations=0",
+//                "-Dp_object_pool=0",
 //                "-Dcarve_object_pool=TRUE",
+//                "-Dcollect_accessed_classes_in_tests=True",
+//                "-Dmodel_sut=FALSE",
                 "-Dp_object_pool=0.5",
 //                "-Dseed_clone=0",
                 //"-Dwrite_cfg=true",
-//                "-Dseed_mutations=0",
-//                "-Dselected_junit=" + jUnits,
                 "-Dtarget_exception_crash=java.lang.NullPointerException",
                 "-DEXP="+ logPath,
                 "-projectCP",
