@@ -84,10 +84,13 @@ public class CallSequencesPoolManager extends CallSequencesPool {
                 List<BytecodeInstruction> bcList = cfg.determineMethodCalls();
                 for (BytecodeInstruction bc : bcList){
                     String keyName = bc.getCalledMethodsClass();
+                    if (!keyName.equals(clazz)){
                     if (!temp.containsKey(keyName)){
                         temp.put(keyName,new ArrayList<MethodCalls>());
                     }
-                    temp.get(keyName).add(new MethodCalls(bc));
+                    temp.get(keyName).add(new MethodCalls(bc));}else{
+                        LoggingUtils.getEvoLogger().info("Same class: "+clazz+ "For method name -> "+bc.getCalledMethod());
+                    }
                 }
                 for (Map.Entry<String, List<MethodCalls>> tempEntry : temp.entrySet()) {
                     String key = tempEntry.getKey();
