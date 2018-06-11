@@ -74,7 +74,10 @@ public class PropertiesTestGAFactory extends PropertiesSearchAlgorithmFactory<Te
 			switch (Properties.TEST_FACTORY) {
 			case ROOT_PUBLIC_METHOD:
 				logger.info("Using root method chromosome factory");
-				return new RootMethodTestCarvedTestChromosomeFactory();
+				if(Properties.JUNIT.length()>0)
+					return new RootMethodTestCarvedTestChromosomeFactory();
+				else
+					return new RootMethodTestChromosomeFactory();
 			case ALLMETHODS:
 				logger.info("Using all methods chromosome factory");
 				return new AllMethodsTestChromosomeFactory();
