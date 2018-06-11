@@ -1568,6 +1568,12 @@ public class Properties {
 	@Parameter(key = "model_path", group = "SUT Modelling", description = "path of the directory which contains SUT models")
 	public static String MODEL_PATH = null;
 
+    @Parameter(key = "number_of_carved_tests", group = "SUT Modelling", description = "Number of carved test from each model")
+    public static int NUMBER_OF_MODEL_TESTS = 3;
+
+    @Parameter(key = "allow_object_pool_usage", group = "SUT Modelling", description = "allow object pool usage")
+    public static boolean ALLOW_OBJECT_POOL_USAGE = false;
+
 
 	// ---------------------------------------------------------------
 	// Seeding test cases
