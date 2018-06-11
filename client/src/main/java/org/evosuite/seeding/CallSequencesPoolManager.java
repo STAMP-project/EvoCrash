@@ -33,36 +33,38 @@ public class CallSequencesPoolManager extends CallSequencesPool {
     }
 
     private void initialisePool() {
-    // Using carved tests for initialising the pool
-        CarvingManager manager = CarvingManager.getInstance();
-        for(Class<?> targetClass : manager.getClassesWithTests()) {
-            List<TestCase> tests = manager.getTestsForClass(targetClass);
-            GenericClass cut = new GenericClass(targetClass);
-            for(TestCase test : tests) {
-                Map<String, List<MethodCalls>> temp = new HashMap<String, List<MethodCalls>>();
-                for(int i=0;i<test.size();i++){
-                    Statement statement = test.getStatement(i);
-                    if (statement.getClass().getSimpleName().equals("MethodStatement")){
-                        String keyName = statement.getAccessibleObject().getDeclaringClass().getName();
-                        for (VariableReference var: statement.getUniqueVariableReferences()){
-                            if (var.getType().getTypeName().equals(statement.getAccessibleObject().getDeclaringClass().getName())){
-                                keyName=keyName+"-"+var.getName();
-                                break;
+        if(Properties.SELECTED_JUNIT.length()>0) {
+            // Using carved tests for initialising the pool
+            CarvingManager manager = CarvingManager.getInstance();
+            for (Class<?> targetClass : manager.getClassesWithTests()) {
+                List<TestCase> tests = manager.getTestsForClass(targetClass);
+                GenericClass cut = new GenericClass(targetClass);
+                for (TestCase test : tests) {
+                    Map<String, List<MethodCalls>> temp = new HashMap<String, List<MethodCalls>>();
+                    for (int i = 0; i < test.size(); i++) {
+                        Statement statement = test.getStatement(i);
+                        if (statement.getClass().getSimpleName().equals("MethodStatement")) {
+                            String keyName = statement.getAccessibleObject().getDeclaringClass().getName();
+                            for (VariableReference var : statement.getUniqueVariableReferences()) {
+                                if (var.getType().getTypeName().equals(statement.getAccessibleObject().getDeclaringClass().getName())) {
+                                    keyName = keyName + "-" + var.getName();
+                                    break;
+                                }
                             }
+                            if (!temp.containsKey(keyName)) {
+                                temp.put(keyName, new ArrayList<MethodCalls>());
+                            }
+                            temp.get(keyName).add(new MethodCalls(statement));
                         }
-                        if (!temp.containsKey(keyName)){
-                            temp.put(keyName,new ArrayList<MethodCalls>());
-                        }
-                        temp.get(keyName).add(new MethodCalls(statement));
                     }
-                }
-                for (Map.Entry<String, List<MethodCalls>> entry : temp.entrySet()) {
-                    String key = entry.getKey();
-                    List<MethodCalls> callSeqs = entry.getValue();
-                    if (key.indexOf('-')!= -1){
-                        this.addSequence(key.substring(0,key.indexOf('-')), callSeqs);
-                    }else{
-                        LoggingUtils.getEvoLogger().error("key "+key+" does not have - char!!!");
+                    for (Map.Entry<String, List<MethodCalls>> entry : temp.entrySet()) {
+                        String key = entry.getKey();
+                        List<MethodCalls> callSeqs = entry.getValue();
+                        if (key.indexOf('-') != -1) {
+                            this.addSequence(key.substring(0, key.indexOf('-')), callSeqs);
+                        } else {
+                            LoggingUtils.getEvoLogger().error("key " + key + " does not have - char!!!");
+                        }
                     }
                 }
             }
@@ -70,8 +72,8 @@ public class CallSequencesPoolManager extends CallSequencesPool {
 
 
 
-
         // using source code for initialising the pool
+        LoggingUtils.getEvoLogger().info(":(");
         GraphPool graphPool = GraphPool.getInstance(TestGenerationContext.getInstance().getClassLoaderForSUT());
         Set<String> clazzes = graphPool.getAvailableGraphsClassname();
         for(String clazz: clazzes){
