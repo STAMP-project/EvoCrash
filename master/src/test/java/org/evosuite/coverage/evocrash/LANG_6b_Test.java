@@ -45,7 +45,7 @@ public class LANG_6b_Test {
 
     @Test
     public void lang_6b_frameLevel_1(){
-        boolean accessed = true;
+        boolean accessed = false;
 
 
         int targetFrame = 3;
@@ -108,8 +108,8 @@ public class LANG_6b_Test {
                 JsonObject root = new JsonParser().parse(new FileReader(accessedClassesPath)).getAsJsonObject();
                 if (root.has(targetClass)) {
                     JsonArray ja = root.get(targetClass).getAsJsonArray();
-                    for (int i = 0; i <= ja.size(); i++)
-                        jUnits += (ja.get(0) + ":");
+                    for (int i = 0; i < ja.size(); i++){
+                        jUnits += (ja.get(i).toString().substring(1,ja.get(i).toString().lastIndexOf('.')) + ":");}
                 } else {
                     System.out.println("No Junits for class: " + targetClass);
                 }
@@ -133,7 +133,7 @@ public class LANG_6b_Test {
                 "-Drandom_tests=3",
                 "-Dminimize=TRUE",
                 "-Dheadless_chicken_test=FALSE",
-                "-Dpopulation=5",
+                "-Dpopulation=100",
                 "-Dsearch_budget=1800",
                 "-Dtarget_frame="+targetFrame,
                 "-Drandom_tests=0",
@@ -142,15 +142,17 @@ public class LANG_6b_Test {
                 "-Dreport_dir=spreadsheets",
                 "-Dlog_goals=TRUE",
                 "-Dmax_recursion=30",
-                "-Djunit="+jUnits,
-                "-Dmodel_sut=TRUE",
-                "-Dcollect_accessed_classes_in_tests="+accessed,
-                "-Dcarve_object_pool=TRUE",
-                "-Dp_object_pool=1.0",
-                "-Dseed_clone=0",
+                "-Dcarve_model=TRUE",
+                "-Dmodel_path=/Users/pooria/Desktop/CallSequencePoolJson",
+//                "-Djunit="+jUnits,
+//                "-Dmodel_sut=TRUE",
+//                "-Dcollect_accessed_classes_in_tests=FALSE",
+//                "-Dcarve_object_pool=TRUE",
+                "-Dp_object_pool=0.5",
+//                "-Dseed_clone=0",
                 //"-Dwrite_cfg=true",
-                "-Dseed_mutations=0",
-                "-Dselected_junit=" + jUnits,
+//                "-Dseed_mutations=0",
+//                "-Dselected_junit=" + jUnits,
                 "-Dtarget_exception_crash=java.lang.NullPointerException",
                 "-DEXP="+ logPath,
                 "-projectCP",
