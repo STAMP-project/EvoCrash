@@ -184,7 +184,8 @@ public class TestSuiteGenerator {
 		 * classes
 		 */
 		// TODO: Do parts of this need to be wrapped into sandbox statements?
-		ObjectPoolManager.getInstance();
+		if(Properties.SELECTED_JUNIT.length()>0)
+			ObjectPoolManager.getInstance();
 
 		LoggingUtils.getEvoLogger().info("* Generating tests for class " + Properties.TARGET_CLASS);
 		TestSuiteGeneratorHelper.printTestCriterion();
