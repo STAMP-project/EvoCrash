@@ -211,7 +211,6 @@ public class ObjectPoolManager extends ObjectPool {
 					}
 				}
 			}
-			Properties.ALLOW_OBJECT_POOL_USAGE=true;
 
 
 			for (Map.Entry<GenericClass, Set<TestCase>> entry : this.pool.entrySet()){
@@ -224,6 +223,7 @@ public class ObjectPoolManager extends ObjectPool {
 				LoggingUtils.getEvoLogger().info("~~~~~~~~~~~~~~~");
 			}
 		}
+        Properties.ALLOW_OBJECT_POOL_USAGE=true;
 	}
 		
 	public void reset() {
