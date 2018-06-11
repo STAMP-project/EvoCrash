@@ -1577,7 +1577,7 @@ public class Properties {
 	@Parameter(key = "accessed_classes_output_path", group = "SUT Modelling", description = "path of a directory for outputting accessed class json file")
 	public static String ACCESSED_CLASSES_OUTPUT_PATH = null;
 
-	@Parameter(key = "Call_Sequences_output_path", group = "SUT Modelling", description = "path of a directory for outputting call sequences json file")
+	@Parameter(key = "call_Sequences_output_path", group = "SUT Modelling", description = "path of a directory for outputting call sequences json file")
 	public static String CALL_SEQUENCES_OUTPUT_PATH = null;
 
 
