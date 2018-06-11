@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.FileUtils;
+import org.evosuite.Properties;
 import org.evosuite.TestGenerationContext;
 import org.evosuite.graphs.GraphPool;
 import org.evosuite.graphs.cfg.BytecodeInstruction;
@@ -128,7 +129,7 @@ public class CallSequencesPoolManager extends CallSequencesPool {
         Gson gson = new GsonBuilder().create();
         String json = gson.toJson(this.pool,pool.getClass());
 
-        try (PrintWriter out = new PrintWriter("CallSequencePoolJson.txt")) {
+        try (PrintWriter out = new PrintWriter(Properties.CALL_SEQUENCES_OUTPUT_PATH)) {
             out.println(json);
         } catch (FileNotFoundException e) {
             e.printStackTrace();

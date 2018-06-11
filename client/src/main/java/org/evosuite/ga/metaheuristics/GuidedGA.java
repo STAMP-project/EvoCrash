@@ -82,7 +82,7 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 				testsForClasses.put(targetClass.getName(),temp);
 			}
 
-			try (Writer writer = new FileWriter("accessed_classes.json")) {
+			try (Writer writer = new FileWriter(Properties.ACCESSED_CLASSES_OUTPUT_PATH)) {
 				Gson gson = new GsonBuilder().create();
 				gson.toJson(testsForClasses, writer);
 			}catch (Exception e){}
@@ -96,10 +96,10 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 			callseqsManager.report();
 			LoggingUtils.getEvoLogger().info("saving pool");
 			callseqsManager.savePool();
-			LoggingUtils.getEvoLogger().info("reading pool");
-			callseqsManager.readPoolFromTheFile("CallSequencePoolJson.txt");
-			LoggingUtils.getEvoLogger().info("reporting again");
-			callseqsManager.report();
+//			LoggingUtils.getEvoLogger().info("reading pool");
+//			callseqsManager.readPoolFromTheFile("CallSequencePoolJson.txt");
+//			LoggingUtils.getEvoLogger().info("reporting again");
+//			callseqsManager.report();
 		}else{
 
 
