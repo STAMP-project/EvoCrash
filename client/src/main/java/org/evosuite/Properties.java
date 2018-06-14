@@ -1580,6 +1580,9 @@ public class Properties {
 	@Parameter(key = "call_Sequences_output_path", group = "SUT Modelling", description = "path of a directory for outputting call sequences json file")
 	public static String CALL_SEQUENCES_OUTPUT_PATH = null;
 
+	@Parameter(key = "CP_static_analysis", group = "SUT Modelling", description = "The classpaths that we want to have for statical analysis for filling CallSequencePool")
+	public static String CP_STATIC_ANALYSIS = null;
+
 
 	// ---------------------------------------------------------------
 	// Seeding test cases
@@ -2397,6 +2400,15 @@ public class Properties {
 			LoopCounter.getInstance().setActive(false);
 			TARGET_CLASS_INSTANCE = Class.forName(TARGET_CLASS, initialise,
 					TestGenerationContext.getInstance().getClassLoaderForSUT());
+
+			if(Properties.CP_STATIC_ANALYSIS != null && Properties.CP_STATIC_ANALYSIS.length()>0){
+				String[] cps = Properties.CP_STATIC_ANALYSIS.split(":");
+				for (String cp: cps){
+					Class.forName(cp, initialise,
+							TestGenerationContext.getInstance().getClassLoaderForSUT());
+				}
+			}
+
 			
 
 			if (STRATEGY == Strategy.REGRESSION) {
