@@ -44,9 +44,21 @@ public class CallSequencesPoolManager extends CallSequencesPool {
                     for (int i = 0; i < test.size(); i++) {
                         Statement statement = test.getStatement(i);
                         if (statement.getClass().getSimpleName().equals("MethodStatement")) {
-                            String keyName = statement.getAccessibleObject().getDeclaringClass().getName();
+                            String keyName = statement.getAccessibleObject().getOwnerClass().getClassName();
                             for (VariableReference var : statement.getUniqueVariableReferences()) {
-                                if (var.getType().getTypeName().equals(statement.getAccessibleObject().getDeclaringClass().getName())) {
+                                if (var.getType().getTypeName().equals(statement.getAccessibleObject().getOwnerClass().getClassName())) {
+                                    keyName = keyName + "-" + var.getName();
+                                    break;
+                                }
+                            }
+                            if (!temp.containsKey(keyName)) {
+                                temp.put(keyName, new ArrayList<MethodCalls>());
+                            }
+                            temp.get(keyName).add(new MethodCalls(statement));
+                        }else if(statement.getClass().getSimpleName().equals("ConstructorStatement")){
+                            String keyName = statement.getAccessibleObject().getOwnerClass().getClassName();
+                            for (VariableReference var : statement.getUniqueVariableReferences()) {
+                                if (var.getType().getTypeName().equals(statement.getAccessibleObject().getOwnerClass().getClassName())) {
                                     keyName = keyName + "-" + var.getName();
                                     break;
                                 }
@@ -72,8 +84,7 @@ public class CallSequencesPoolManager extends CallSequencesPool {
 
 
 
-        // using source code for initialising the pool
-        LoggingUtils.getEvoLogger().info(":(");
+//         using source code for initialising the pool
         GraphPool graphPool = GraphPool.getInstance(TestGenerationContext.getInstance().getClassLoaderForSUT());
         Set<String> clazzes = graphPool.getAvailableGraphsClassname();
         for(String clazz: clazzes){
