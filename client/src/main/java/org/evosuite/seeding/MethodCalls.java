@@ -13,8 +13,10 @@ public class MethodCalls {
 
 
     public MethodCalls(Statement statement){
-
-        methodName = statement.getAccessibleObject().getName();
+        if (statement.getAccessibleObject().isMethod())
+            methodName = statement.getAccessibleObject().getName();
+        else if (statement.getAccessibleObject().isConstructor())
+            methodName =  "<init>";
 
         Type[] types = statement.getAccessibleObject().getGenericParameterTypes();
         params = new String[types.length];
