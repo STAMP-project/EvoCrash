@@ -816,27 +816,40 @@ public class TestFactory {
 
 			if(Properties.ALLOW_OBJECT_POOL_USAGE) {
 				ObjectPoolManager objectPool = ObjectPoolManager.getInstance();
-				if (objectPool.hasSequence(clazz) && useObjectPool(clazz)) {
-					TestCase sequence;
-					if (Properties.CARVE_MODEL){
-						sequence = objectPool.getRandomSequenceFromModel(clazz);
-					}else{
-						sequence = objectPool.getRandomSequence(clazz);
+				if (Properties.CARVE_MODEL) {
+					if (objectPool.hasSequence(clazz) && useObjectPool(clazz)) {
+						TestCase sequence = objectPool.getRandomSequenceFromModel(clazz);
+						logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
+						VariableReference targetObject = sequence.getLastObject(type);
+						int returnPos = position + targetObject.getStPosition();
+
+						for (int i = 0; i < sequence.size(); i++) {
+							Statement s = sequence.getStatement(i);
+							test.addStatement(s.copy(test, position), position + i);
+						}
+
+						logger.debug("Return type of object sequence: {}",
+								test.getStatement(returnPos).getReturnValue().getClassName());
+
+						return test.getStatement(returnPos).getReturnValue();
 					}
+				}else {
+					if (Randomness.nextDouble() <= Properties.P_OBJECT_POOL && objectPool.hasSequence(clazz)) {
+						TestCase sequence = objectPool.getRandomSequence(clazz);
+						logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
+						VariableReference targetObject = sequence.getLastObject(type);
+						int returnPos = position + targetObject.getStPosition();
 
-					logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
-					VariableReference targetObject = sequence.getLastObject(type);
-					int returnPos = position + targetObject.getStPosition();
+						for (int i = 0; i < sequence.size(); i++) {
+							Statement s = sequence.getStatement(i);
+							test.addStatement(s.copy(test, position), position + i);
+						}
 
-					for (int i = 0; i < sequence.size(); i++) {
-						Statement s = sequence.getStatement(i);
-						test.addStatement(s.copy(test, position), position + i);
+						logger.debug("Return type of object sequence: {}",
+								test.getStatement(returnPos).getReturnValue().getClassName());
+
+						return test.getStatement(returnPos).getReturnValue();
 					}
-
-					logger.debug("Return type of object sequence: {}",
-							test.getStatement(returnPos).getReturnValue().getClassName());
-
-					return test.getStatement(returnPos).getReturnValue();
 				}
 			}
 			logger.debug("Creating new object for type {}",type);
