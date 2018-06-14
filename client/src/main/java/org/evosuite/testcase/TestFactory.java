@@ -35,6 +35,8 @@ import org.evosuite.Properties;
 import org.evosuite.TestGenerationContext;
 import org.evosuite.TimeController;
 import org.evosuite.ga.ConstructionFailedException;
+import org.evosuite.rmi.ClientServices;
+import org.evosuite.rmi.service.ClientState;
 import org.evosuite.runtime.annotation.Constraints;
 import org.evosuite.runtime.javaee.injection.Injector;
 import org.evosuite.runtime.javaee.javax.servlet.EvoServletState;
@@ -814,8 +816,7 @@ public class TestFactory {
 
 			if(Properties.ALLOW_OBJECT_POOL_USAGE) {
 				ObjectPoolManager objectPool = ObjectPoolManager.getInstance();
-				if (Randomness.nextDouble() <= Properties.P_OBJECT_POOL
-						&& objectPool.hasSequence(clazz)) {
+				if (objectPool.hasSequence(clazz) && useObjectPool(clazz)) {
 					TestCase sequence;
 					if (Properties.CARVE_MODEL){
 						sequence = objectPool.getRandomSequenceFromModel(clazz);
@@ -838,11 +839,37 @@ public class TestFactory {
 					return test.getStatement(returnPos).getReturnValue();
 				}
 			}
-
 			logger.debug("Creating new object for type {}",type);
 			return createObject(test, type, position, recursionDepth,
 					generatorRefToExclude, allowNull, canUseMocks,canReuseExistingVariables);
 		}
+	}
+
+
+	private boolean useObjectPool(GenericClass clazz){
+		double prob ;
+		ClientState cst = ClientServices.getInstance().getClientNode().getState();
+		boolean initPassed = (cst.getNumPhase()>2);
+		boolean targetClass = (clazz.getClassName().equals(Properties.TARGET_CLASS));
+
+		if(!initPassed){
+			if(!targetClass){
+				prob= Properties.P_MODEL_POOL_OTHER_INIT;
+			}else{
+				prob=Properties.P_MODEL_POOL_TARGET_INIT;
+			}
+		}else {
+			if (!targetClass) {
+				prob = Properties.P_MODEL_POOL_OTHER_MUTATE;
+			} else {
+				prob = Properties.P_MODEL_POOL_TARGET_MUTATE;
+			}
+		}
+
+		if(Randomness.nextDouble() <= prob)
+			return true;
+		else
+			return false;
 	}
 
 	/**

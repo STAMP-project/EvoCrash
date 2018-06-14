@@ -46,4 +46,6 @@ public interface ClientNodeLocal {
 	public void updateProperty(String propertyName, Object value);
 
 	public void waitUntilDone();
+
+	public ClientState getState();
 }

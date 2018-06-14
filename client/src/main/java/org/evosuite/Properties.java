@@ -1583,6 +1583,20 @@ public class Properties {
 	@Parameter(key = "CP_static_analysis", group = "SUT Modelling", description = "The classpaths that we want to have for statical analysis for filling CallSequencePool")
 	public static String CP_STATIC_ANALYSIS = null;
 
+	@Parameter(key = "P_model_pool_target_init", group = "SUT Modelling", description = "")
+	public static double P_MODEL_POOL_TARGET_INIT = 0.3;
+
+
+	@Parameter(key = "P_model_pool_other_init", group = "SUT Modelling", description = "")
+	public static double P_MODEL_POOL_OTHER_INIT = 0.3;
+
+
+	@Parameter(key = "P_model_pool_target_mutate", group = "SUT Modelling", description = "")
+	public static double P_MODEL_POOL_TARGET_MUTATE = 0.3;
+
+	@Parameter(key = "P_model_pool_other_mutate", group = "SUT Modelling", description = "")
+	public static double P_MODEL_POOL_OTHER_MUTATE = 0.3;
+
 
 	// ---------------------------------------------------------------
 	// Seeding test cases

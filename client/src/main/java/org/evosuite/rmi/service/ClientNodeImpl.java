@@ -204,6 +204,8 @@ public class ClientNodeImpl implements ClientNodeLocal, ClientNodeRemote {
 		changeState(state, new ClientStateInformation(state));
 	}
 
+	public ClientState getState(){return this.state;}
+
 	@Override
 	public synchronized void changeState(ClientState state, ClientStateInformation information) {
 		if (this.state != state){
