@@ -35,6 +35,7 @@ import org.evosuite.TestGenerationContext;
 import org.evosuite.classpath.ResourceList;
 import org.evosuite.runtime.instrumentation.RuntimeInstrumentation;
 import org.evosuite.runtime.javaee.db.DBManager;
+import org.evosuite.utils.LoggingUtils;
 import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,7 +195,7 @@ public class InstrumentingClassLoader extends ClassLoader {
 			Class<?> result = defineClass(fullyQualifiedTargetClass, byteBuffer, 0,byteBuffer.length);
 			classes.put(fullyQualifiedTargetClass, result);
 
-			logger.info("Loaded class: " + fullyQualifiedTargetClass);
+			LoggingUtils.getEvoLogger().info("Loaded class: " + fullyQualifiedTargetClass);
 			return result;
 		} catch (Throwable t) {
 			logger.info("Error while loading class: "+t);
