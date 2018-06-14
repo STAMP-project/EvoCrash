@@ -816,8 +816,13 @@ public class TestFactory {
 				ObjectPoolManager objectPool = ObjectPoolManager.getInstance();
 				if (Randomness.nextDouble() <= Properties.P_OBJECT_POOL
 						&& objectPool.hasSequence(clazz)) {
+					TestCase sequence;
+					if (Properties.CARVE_MODEL){
+						sequence = objectPool.getRandomSequenceFromModel(clazz);
+					}else{
+						sequence = objectPool.getRandomSequence(clazz);
+					}
 
-					TestCase sequence = objectPool.getRandomSequence(clazz);
 					logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
 					VariableReference targetObject = sequence.getLastObject(type);
 					int returnPos = position + targetObject.getStPosition();
