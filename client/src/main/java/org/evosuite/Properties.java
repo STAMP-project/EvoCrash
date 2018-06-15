@@ -94,6 +94,11 @@ public class Properties {
 	}
 
 	// ---------------------------------------------------------------
+
+
+
+	@Parameter(key = "project_keyword", group = "target project", description = "keyword of the target project")
+	public static String PROJECT_KEYWORD = "";
 	// Test sequence creation
 	@Parameter(key = "test_excludes", group = "Test Creation", description = "File containing methods that should not be used in testing")
 	public static String TEST_EXCLUDES = "test.excludes";
