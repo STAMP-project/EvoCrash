@@ -120,7 +120,7 @@ public class ObjectPool implements Serializable {
 		if (!usedPool.containsKey(clazz))
 			usedPool.put(clazz, new HashSet<TestCase>());
 		usedPool.get(clazz).add(result);
-		LoggingUtils.getEvoLogger().info("using sequence {} of object {}.",result.toCode(),clazz.getClassName());
+//		LoggingUtils.getEvoLogger().info("using sequence {} of object {}.",result.toCode(),clazz.getClassName());
 		return result;
 
 	}
