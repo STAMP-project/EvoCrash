@@ -24,8 +24,10 @@ import org.evosuite.EvoSuite;
 import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
 import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
+import org.evosuite.utils.LoggingUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.rmi.runtime.Log;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.*;
@@ -48,15 +50,17 @@ public class LANG_6b_Test {
         boolean accessed = false;
 
 
-        int targetFrame = 2;
+        int targetFrame = 10;
         String user_dir = System.getProperty("user.dir");
 
-//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","Lang-bins","LANG-6b");
-        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-7.4");
+        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","Lang-bins","LANG-9b");
+//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-7.4");
+//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","fake");
         String bin_path = binpath.toString();
 
-//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-6b" , "LANG-6b.log");
-        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
+        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-9b" , "LANG-9b.log");
+//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
+//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "fakeLog" , "fake.log");pwd
         String logPath = logpath.toString();
 
         Path accessedOutput = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","accessed_classes.json");
@@ -79,6 +83,7 @@ public class LANG_6b_Test {
                 String dependency = depPath.toString();
                 if (listOfFilesInSourceFolder[i].getName().contains("-tests")){ testJars.add(dependency); }
                 dependencies += (dependency + ":");
+
             }
         }
         String targetClass = LogParser.getTargetClass(logPath, targetFrame);
@@ -89,6 +94,10 @@ public class LANG_6b_Test {
 
         String jUnits = "";
 
+        String staticAnalysisTarget="";
+        int numberOfFrames = LogParser.getNumberOfFrames(logPath);
+        for(int i=1;i<=numberOfFrames;i++)
+            staticAnalysisTarget += (LogParser.getTargetClass(logPath,i) + ":");
         if (accessed){
         // get all of the test cases for generating accessed_classes.json file
         for (String testJarAddr : testJars){
@@ -108,7 +117,6 @@ public class LANG_6b_Test {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println(jUnits);
         }
 
         }else {
@@ -116,6 +124,7 @@ public class LANG_6b_Test {
             try {
                 JsonObject root = new JsonParser().parse(new FileReader(accessedClassesPath)).getAsJsonObject();
                 if (root.has(targetClass)) {
+                    System.out.println(":(");
                     JsonArray ja = root.get(targetClass).getAsJsonArray();
                     for (int i = 0; i < ja.size(); i++){
                         jUnits += (ja.get(i).toString().substring(1,ja.get(i).toString().lastIndexOf('.')) + ":");}
@@ -125,8 +134,9 @@ public class LANG_6b_Test {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            System.out.println(jUnits);
+            System.out.println("JJ"+jUnits);
         }
+
 
 
 
@@ -138,87 +148,43 @@ public class LANG_6b_Test {
         String[] command = {
 
 
-//                "-generateTests",
-//                "-Dcriterion=CRASH",
-//                "-Dsandbox=TRUE",
-//                "-Dtest_dir="+ testPath.toString(),
-//                "-Drandom_tests=0",
-                "-Dp_functional_mocking=0.8",
-                "-Dfunctional_mocking_percent=0.5",
-                "-Dp_reflection_on_private=0",
-                "-Dreflection_start_percent=0",
-//                "-Dminimize=TRUE",
-//                "-Dheadless_chicken_test=FALSE",
-//                "-Dpopulation="+population,
-//                "-Dsearch_budget="+budget,
-                "-Dstopping_condition=MAXFITNESSEVALUATIONS",
-                "-Dglobal_timeout="+(5*60*60),
-//                "-Dtarget_frame="+frameLevel,
-//                "-Dvirtual_fs=TRUE",
-                "-Duse_separate_classloader=FALSE",
-//                "-Dreplace_calls=FALSE",
-//                "-Dmax_recursion=50",
-//                    "-Djunit="+jUnits,
-//                "-Dp_object_pool="+p_object_pool,
-//                "-Dseed_clone="+seed_clone,
-//                "-Dseed_mutations="+seed_mutations,
-//                    "-Dselected_junit=" + jUnits,
-
-                "-Dcarve_model=TRUE",
-                "-Dcarve_object_pool=FALSE",
-//                "-Dcollect_accessed_classes_in_tests=False",
-                "-Dmodel_sut=FALSE",
-//                "-Dmodel_path="+model_path.toString(),
-
-                "-Dreset_static_fields=FALSE",
-                "-Dvirtual_net=FALSE",
-//                "-Dtarget_exception_crash="+ExceptionType,
-
-
-
                 "-generateTests",
                 "-Dcriterion=CRASH",
                 "-Dsandbox=TRUE",
                 "-Dtest_dir="+ test_path,
-//                "-Drandom_tests=3",
+                "-Drandom_tests=3",
                 "-Dminimize=TRUE",
                 "-Dheadless_chicken_test=FALSE",
                 "-Dpopulation=100",
-                "-Dsearch_budget=62328",
+                "-Dsearch_budget=1800",
                 "-Dtarget_frame="+targetFrame,
                 "-Drandom_tests=0",
                 "-Dvirtual_fs=TRUE",
                 "-Dreplace_calls=FALSE",
                 "-Dreport_dir=spreadsheets",
-//                "-Dlog_goals=TRUE",
-                "-Dmax_recursion=50",
+                "-Dlog_goals=TRUE",
+                "-Dmax_recursion=30",
                 "-Dmodel_path=/Users/pooria/Desktop/CallSequencePoolJson",
-//                "-Daccessed_classes_output_path="+accessed_output_file,
-//                "-Dcall_Sequences_output_path="+call_sequences_file,
-//                "-Djunit="+jUnits,
-//                "-Dselected_junit=" + jUnits,
+                "-Daccessed_classes_output_path="+accessed_output_file,
+                "-Dcall_Sequences_output_path="+call_sequences_file,
+                "-Dcarve_model=TRUE",
+                "-Djunit="+jUnits,
+                "-Dselected_junit=" + jUnits,
                 "-Dseed_mutations=0",
-//                "-Dp_object_pool=0",
-//                "-Dcarve_object_pool=TRUE",
-                "-Dcollect_accessed_classes_in_tests=False",
-//                "-Dmodel_sut=TRUE",
-//                "-Dcarve_model=FALSE",
-//                "-Djunit="+jUnits,
-//                "-Dselected_junit=" + jUnits,
-//                "-Dseed_mutations=0",
-//                "-Dp_object_pool=0",
-//                "-Dcarve_object_pool=TRUE",
-//                "-Dcollect_accessed_classes_in_tests=True",
-//                "-Dmodel_sut=FALSE",
-                "-Dp_object_pool=0.5",
-                "-Dseed_clone=0",
-                //"-Dwrite_cfg=true",
+                "-Dp_object_pool=0",
+                "-Dcarve_object_pool=FALSE",
+                "-Dcollect_accessed_classes_in_tests=FALSE",
+                "-Dmodel_sut=FALSE",
+                "-Dproject_keyword=xwiki",
                 "-Dtarget_exception_crash=java.lang.NullPointerException",
                 "-DEXP="+ logPath,
                 "-projectCP",
                 dependencies,
                 "-class",
-                targetClass
+                targetClass,
+                "-DCP_static_analysis="+staticAnalysisTarget,
+
+
         };
 
         EvoSuite evosuite = new EvoSuite();
