@@ -118,7 +118,7 @@ public class ObjectPoolManager extends ObjectPool {
 			for (File file : listOfFiles) {
 				if (file.isFile() && !file.getName().startsWith(".") && file.getName().endsWith(".xml") ) {
 					String xmlClassName = file.getName().substring(0, file.getName().length() - 4);
-					if (xmlClassName.indexOf('.')== -1 || xmlClassName.contains("java") || xmlClassName.contains(Properties.PROJECT_KEYWORD)){
+					if (xmlClassName.indexOf('.')== -1 || xmlClassName.contains(".java.") || Properties.CP_STATIC_ANALYSIS.contains(xmlClassName)){
 						LoggingUtils.getEvoLogger().info("working on callSequences of " + file.getName());
 						try {
 							UsageModel um = Xml.loadUsageModel(Paths.get(folder.getAbsolutePath(), file.getName()).toString());
