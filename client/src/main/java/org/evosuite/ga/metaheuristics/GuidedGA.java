@@ -85,9 +85,13 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 			try (Writer writer = new FileWriter(Properties.ACCESSED_CLASSES_OUTPUT_PATH)) {
 				Gson gson = new GsonBuilder().create();
 				gson.toJson(testsForClasses, writer);
-			}catch (Exception e){}
+			}catch (Exception e){
+				LoggingUtils.getEvoLogger().error("Could not write the JSON file");
+			}finally {
+				LoggingUtils.getEvoLogger().info("* Accessed_classes is saved!");
+				System.exit(0);
+			}
 
-			System.exit(0);
 		}
 
 		if (Properties.MODEL_SUT) {
