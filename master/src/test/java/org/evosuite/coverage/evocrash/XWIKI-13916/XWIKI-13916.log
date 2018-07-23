@@ -1,0 +1,13 @@
+java.lang.ClassCastException: com.xpn.xwiki.objects.classes.StringClass cannot be cast to com.xpn.xwiki.objects.classes.TextAreaClass
+	at com.xpn.xwiki.objects.classes.BaseClass.addTextAreaField(BaseClass.java:890)
+	at com.xpn.xwiki.objects.classes.BaseClass.addTextAreaField(BaseClass.java:878)
+	at com.xpn.xwiki.objects.classes.BaseClass.addTextAreaField(BaseClass.java:868)
+	at com.xpn.xwiki.internal.mandatory.XWikiPreferencesDocumentInitializer.updateDocument(XWikiPreferencesDocumentInitializer.java:200)
+	at com.xpn.xwiki.XWiki.initializeMandatoryDocument(XWiki.java:1271)
+	at com.xpn.xwiki.XWiki.initializeMandatoryDocuments(XWiki.java:1243)
+	at com.xpn.xwiki.internal.WikiInitializerJob.runInternal(WikiInitializerJob.java:108)
+	at org.xwiki.job.AbstractJob.runInContext(AbstractJob.java:206)
+	at org.xwiki.job.AbstractJob.run(AbstractJob.java:189)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
