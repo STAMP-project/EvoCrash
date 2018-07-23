@@ -195,7 +195,7 @@ public class InstrumentingClassLoader extends ClassLoader {
 			Class<?> result = defineClass(fullyQualifiedTargetClass, byteBuffer, 0,byteBuffer.length);
 			classes.put(fullyQualifiedTargetClass, result);
 
-			LoggingUtils.getEvoLogger().info("Loaded class: " + fullyQualifiedTargetClass);
+//			LoggingUtils.getEvoLogger().info("Loaded class: " + fullyQualifiedTargetClass);
 			return result;
 		} catch (Throwable t) {
 			logger.info("Error while loading class: "+t);

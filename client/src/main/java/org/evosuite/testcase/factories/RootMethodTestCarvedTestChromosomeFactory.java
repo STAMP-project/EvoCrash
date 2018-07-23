@@ -181,10 +181,10 @@ public class RootMethodTestCarvedTestChromosomeFactory extends AllMethodsTestChr
 			totalNumberOfTestsCarved = junitTests.size();
 			LoggingUtils.getEvoLogger().info("* Using {} carved tests from existing JUnit tests for seeding", junitTests.size());
 
-			// Printing out all of the carved test cases code
-			for (TestCase test : junitTests) {
-				LoggingUtils.getEvoLogger().info("Carved Test: {}", test.toCode());
-			}
+//			// Printing out all of the carved test cases code
+//			for (TestCase test : junitTests) {
+//				LoggingUtils.getEvoLogger().info("Carved Test: {}", test.toCode());
+//			}
 		}
 
 		ClientNodeLocal client = ClientServices.getInstance().getClientNode();
