@@ -100,6 +100,8 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 			callseqsManager.report();
 			LoggingUtils.getEvoLogger().info("saving pool");
 			callseqsManager.savePool();
+			LoggingUtils.getEvoLogger().info("* Model is saved!");
+			System.exit(0);
 //			LoggingUtils.getEvoLogger().info("reading pool");
 //			callseqsManager.readPoolFromTheFile("CallSequencePoolJson.txt");
 //			LoggingUtils.getEvoLogger().info("reporting again");
