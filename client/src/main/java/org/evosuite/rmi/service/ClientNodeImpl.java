@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -203,6 +203,8 @@ public class ClientNodeImpl implements ClientNodeLocal, ClientNodeRemote {
 	public void changeState(ClientState state) {
 		changeState(state, new ClientStateInformation(state));
 	}
+
+	public ClientState getState(){return this.state;}
 
 	@Override
 	public synchronized void changeState(ClientState state, ClientStateInformation information) {

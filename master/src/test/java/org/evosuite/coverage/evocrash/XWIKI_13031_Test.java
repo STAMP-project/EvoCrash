@@ -24,6 +24,7 @@ import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
 import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -37,84 +38,90 @@ import java.util.List;
 
 
 @NotThreadSafe
+@Ignore
 public class XWIKI_13031_Test {
+    private int frameLevel =4;
+    private String ExceptionType = "java.lang.ClassCastException";
+    @Test
+    public void xwiki_13031_frameLevelx(){
 
-	@Test
-	public void XWIKI_13031_frameLevel_3(){
-		int frameLevel =3;
-		String ExceptionType = "java.lang.ClassCastException";
-		String user_dir = System.getProperty("user.dir");
-		Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash" );
-		String bin_path = binpath.toString();
+        String user_dir = System.getProperty("user.dir");
 
-		Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
-		String logPath = logpath.toString();
-		String dependencies = "";
-		File depFolder = new File(bin_path,"XWIKI-7.4");
-		File[] listOfFilesInSourceFolder = depFolder.listFiles();
-		for(int i = 0; i < listOfFilesInSourceFolder.length; i++){
-			if(listOfFilesInSourceFolder[i].getName().charAt(0) !='.') {
-				Path depPath = Paths.get(depFolder.getAbsolutePath(), listOfFilesInSourceFolder[i].getName());
-				String dependency = depPath.toString();
+        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-7.4");
+        String bin_path = binpath.toString();
 
-				dependencies += (dependency+":");
-			}
-		}
-		dependencies = dependencies.substring(0, dependencies.length() - 1);
+        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
+        String logPath = logpath.toString();
 
-		String targetClass = LogParser.getTargetClass(logPath, 1);
+        File depFolder = new File(bin_path);
+        File[] listOfFilesInSourceFolder = depFolder.listFiles();
+        String dependencies = "";
+        for(int i = 0; i < listOfFilesInSourceFolder.length; i++) {
+            if (listOfFilesInSourceFolder[i].getName().charAt(0) != '.') {
+                Path depPath = Paths.get(depFolder.getAbsolutePath(), listOfFilesInSourceFolder[i].getName());
+                String dependency = depPath.toString();
 
-		Path testpath = Paths.get(user_dir, "GGA-tests");
-		String test_path = testpath.toString();
+                dependencies += (dependency + ":");
+            }
+        }
 
-		String[] command = {
-				"-generateTests",
-				"-Dcriterion=CRASH",
-				"-Dsandbox=FALSE",
-				"-Dtest_dir="+ test_path,
-				"-Drandom_tests=0",
-				"-Dminimize=TRUE",
-				"-Dheadless_chicken_test=FALSE",
-				"-Dpopulation=80",
-				"-Dp_functional_mocking=0.8",
-				"-Dfunctional_mocking_percent=0.5",
-				"-Dsearch_budget=1800",
-				"-Dtarget_frame="+frameLevel,
-				"-Dvirtual_fs=FALSE",
-				"-Dreplace_calls=FALSE",
-				"-Dreset_static_fields=FALSE",
-				"-Dno_runtime_dependency=TRUE",
-				"-Dvirtual_net=FALSE",
-				"-Dtarget_exception_crash="+ExceptionType,
-				"-DEXP="+ logPath.toString(),
-				"-projectCP",
-				dependencies,
-				"-class",
-				targetClass
-		};
+        String targetClass = LogParser.getTargetClass(logPath, frameLevel);
 
-		EvoSuite evosuite = new EvoSuite();
-		Object result = evosuite.parseCommandLine(command);
-		List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
-		GeneticAlgorithm<?> ga = getGAFromResult(results);
-		if (ga == null){
-			// ga is null when during bootstrapping the ideal test is found!
-			Assert.assertTrue(true);
-		}
-		else{
-			TestChromosome best = (TestChromosome) ga.getBestIndividual();
-			Assert.assertEquals(0.0, best.getFitness(), 0);
-		}
+        Path testpath = Paths.get(user_dir, "GGA-tests");
 
-	}
+        String[] command = {
+                "-generateTests",
+                "-Dcriterion=CRASH",
+                "-Dsandbox=TRUE",
+                "-Dtest_dir="+ testpath.toString(),
+                "-Drandom_tests=0",
+                "-Dalgorithm=PICKYMONOTONICGA",
+                "-Dstrategy=ONEBRANCH",
+                "-Dtest_factory=ROOT_PUBLIC_METHOD",
+                "-Dminimize=TRUE",
+                "-Dheadless_chicken_test=FALSE",
+                "-Dpopulation=80",
+                "-Dp_functional_mocking=0.8",
+                "-Dglobal_timeout="+(5*60*60),
+                "-Dfunctional_mocking_percent=0.5",
+                "-Dstopping_condition=MAXFITNESSEVALUATIONS",
+                "-Dsearch_budget=10000",
+                "-Dtarget_frame="+frameLevel,
+                "-Dvirtual_fs=FALSE",
+                "-Dreplace_calls=FALSE",
+                "-Dreset_static_fields=FALSE",
+                "-Dno_runtime_dependency=TRUE",
+                "-Dvirtual_net=FALSE",
+                "-Dtarget_exception_crash="+ExceptionType,
+                "-DEXP="+ logPath.toString(),
+                "-projectCP",
+                dependencies,
+                "-class",
+                targetClass
+        };
+
+        EvoSuite evosuite = new EvoSuite();
+        Object result = evosuite.parseCommandLine(command);
+        List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
+        GeneticAlgorithm<?> ga = getGAFromResult(results);
+        if (ga == null){
+            // ga is null when during bootstrapping the ideal test is found!
+            Assert.assertTrue(true);
+        }
+        else{
+            TestChromosome best = (TestChromosome) ga.getBestIndividual();
+            Assert.assertEquals(0.0, best.getFitness(), 0);
+        }
+
+    }
 
 
-	@SuppressWarnings("unchecked")
-	protected GeneticAlgorithm<?> getGAFromResult(Object result) {
-		assert(result instanceof List);
-		List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
-		assert(results.size() == 1);
-		return results.get(0).get(0).getGeneticAlgorithm();
-	}
+    @SuppressWarnings("unchecked")
+    protected GeneticAlgorithm<?> getGAFromResult(Object result) {
+        assert(result instanceof List);
+        List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
+        assert(results.size() == 1);
+        return results.get(0).get(0).getGeneticAlgorithm();
+    }
 
 }

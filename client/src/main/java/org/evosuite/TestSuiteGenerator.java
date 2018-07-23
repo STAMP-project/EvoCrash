@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -78,7 +78,6 @@ import java.lang.reflect.Method;
 import java.text.NumberFormat;
 import java.util.*;
 
-import org.evosuite.coverage.evocrash.CrashCoverageInfos;
 /**
  * Main entry point. Does all the static analysis, invokes a test generation
  * strategy, and then applies postprocessing.
@@ -138,7 +137,7 @@ public class TestSuiteGenerator {
 			boolean error = true;
 
 			String message = e.getMessage();
-			if(message != null && message.contains("Method code too large")) {
+			if (message != null && (message.contains("Method code too large") || message.contains("Class file too large"))) {
 				LoggingUtils.getEvoLogger().info("* Instrumentation exceeds Java's 64K limit per method in target class");
 				Properties.Criterion[] newCriteria = Arrays.stream(Properties.CRITERION).filter(t -> !t.equals(Properties.Criterion.STRONGMUTATION) && !t.equals(Properties.Criterion.WEAKMUTATION) && !t.equals(Properties.Criterion.MUTATION)).toArray(Properties.Criterion[]::new);
 				if(newCriteria.length < Properties.CRITERION.length) {
@@ -185,7 +184,8 @@ public class TestSuiteGenerator {
 		 * classes
 		 */
 		// TODO: Do parts of this need to be wrapped into sandbox statements?
-		ObjectPoolManager.getInstance();
+		if((Properties.SELECTED_JUNIT!= null && Properties.SELECTED_JUNIT.length()>0) || Properties.CARVE_MODEL)
+			ObjectPoolManager.getInstance();
 
 		LoggingUtils.getEvoLogger().info("* Generating tests for class " + Properties.TARGET_CLASS);
 		TestSuiteGeneratorHelper.printTestCriterion();
@@ -234,8 +234,6 @@ public class TestSuiteGenerator {
 			}
 		}
 
-        CrashCoverageInfos.getInstance().setCurrentTime(System.currentTimeMillis());
-		ClientServices.getInstance().getClientNode().changeState(ClientState.SEARCH);
 		TestSuiteChromosome testCases = generateTests();
 
 		postProcessTests(testCases);

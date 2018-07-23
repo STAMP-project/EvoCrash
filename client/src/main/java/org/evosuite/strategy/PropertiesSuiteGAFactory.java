@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -20,38 +20,31 @@
 package org.evosuite.strategy;
 
 import org.evosuite.Properties;
-import org.evosuite.ShutdownTestWriter;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.Properties.Strategy;
 import org.evosuite.Properties.TheReplacementFunction;
+import org.evosuite.ShutdownTestWriter;
 import org.evosuite.TestGenerationContext;
-import org.evosuite.coverage.archive.ArchiveTestChromosomeFactory;
-import org.evosuite.coverage.archive.TestsArchive;
 import org.evosuite.coverage.branch.BranchPool;
 import org.evosuite.coverage.mutation.MutationTestPool;
 import org.evosuite.coverage.mutation.MutationTimeoutStoppingCondition;
-import org.evosuite.coverage.rho.RhoTestSuiteSecondaryObjective;
 import org.evosuite.ga.ChromosomeFactory;
 import org.evosuite.ga.FitnessReplacementFunction;
-import org.evosuite.ga.SecondaryObjective;
-import org.evosuite.coverage.ibranch.IBranchSecondaryObjective;
-import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
-import org.evosuite.ga.metaheuristics.GuidedGA;
-import org.evosuite.ga.metaheuristics.RandomSearch;
-import org.evosuite.ga.metaheuristics.SPEA2;
-import org.evosuite.ga.metaheuristics.SteadyStateGA;
-import org.evosuite.ga.metaheuristics.NSGAII;
+import org.evosuite.ga.metaheuristics.BreederGA;
+import org.evosuite.ga.metaheuristics.CellularGA;
+import org.evosuite.ga.archive.ArchiveTestChromosomeFactory;
+import org.evosuite.ga.metaheuristics.*;
+import org.evosuite.ga.metaheuristics.lips.LIPS;
 import org.evosuite.ga.metaheuristics.mosa.MOSA;
-import org.evosuite.ga.metaheuristics.OnePlusOneEA;
-import org.evosuite.ga.metaheuristics.StandardGA;
-import org.evosuite.ga.metaheuristics.MonotonicGA;
-import org.evosuite.regression.RegressionTestChromosomeFactory;
-import org.evosuite.regression.RegressionTestSuiteChromosomeFactory;
-import org.evosuite.statistics.StatisticsListener;
+import org.evosuite.ga.metaheuristics.mulambda.MuLambdaEA;
+import org.evosuite.ga.metaheuristics.mulambda.MuPlusLambdaEA;
+import org.evosuite.ga.metaheuristics.mulambda.OnePlusLambdaLambdaGA;
+import org.evosuite.ga.metaheuristics.mulambda.OnePlusOneEA;
 import org.evosuite.ga.operators.crossover.CrossOverFunction;
 import org.evosuite.ga.operators.crossover.SinglePointCrossOver;
 import org.evosuite.ga.operators.crossover.SinglePointFixedCrossOver;
 import org.evosuite.ga.operators.crossover.SinglePointRelativeCrossOver;
+import org.evosuite.ga.operators.crossover.UniformCrossOver;
 import org.evosuite.ga.operators.selection.BinaryTournamentSelectionCrowdedComparison;
 import org.evosuite.ga.operators.selection.FitnessProportionateSelection;
 import org.evosuite.ga.operators.selection.RankSelection;
@@ -63,23 +56,20 @@ import org.evosuite.ga.stoppingconditions.RMIStoppingCondition;
 import org.evosuite.ga.stoppingconditions.SocketStoppingCondition;
 import org.evosuite.ga.stoppingconditions.StoppingCondition;
 import org.evosuite.ga.stoppingconditions.ZeroFitnessStoppingCondition;
+import org.evosuite.regression.RegressionTestSuiteChromosomeFactory;
+import org.evosuite.statistics.StatisticsListener;
 import org.evosuite.testcase.factories.AllMethodsTestChromosomeFactory;
 import org.evosuite.testcase.factories.JUnitTestCarvedChromosomeFactory;
 import org.evosuite.testcase.factories.RandomLengthTestFactory;
 import org.evosuite.testcase.localsearch.BranchCoverageMap;
-import org.evosuite.testsuite.secondaryobjectives.MinimizeAverageLengthSecondaryObjective;
-import org.evosuite.testsuite.secondaryobjectives.MinimizeExceptionsSecondaryObjective;
-import org.evosuite.testsuite.secondaryobjectives.MinimizeMaxLengthSecondaryObjective;
-import org.evosuite.testsuite.secondaryobjectives.MinimizeSizeSecondaryObjective;
-import org.evosuite.testsuite.secondaryobjectives.MinimizeTotalLengthSecondaryObjective;
 import org.evosuite.testsuite.RelativeSuiteLengthBloatControl;
-import org.evosuite.testsuite.factories.SerializationSuiteChromosomeFactory;
 import org.evosuite.testsuite.TestSuiteChromosome;
-import org.evosuite.testsuite.factories.TestSuiteChromosomeFactory;
 import org.evosuite.testsuite.TestSuiteReplacementFunction;
+import org.evosuite.testsuite.factories.SerializationSuiteChromosomeFactory;
+import org.evosuite.testsuite.factories.TestSuiteChromosomeFactory;
+import org.evosuite.testsuite.secondaryobjectives.TestSuiteSecondaryObjective;
 import org.evosuite.utils.ArrayUtil;
 import org.evosuite.utils.ResourceController;
-
 import sun.misc.Signal;
 
 /**
@@ -131,22 +121,25 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 	
 	protected GeneticAlgorithm<TestSuiteChromosome> getGeneticAlgorithm(ChromosomeFactory<TestSuiteChromosome> factory) {
 		switch (Properties.ALGORITHM) {
-		case ONEPLUSONEEA:
+		case ONE_PLUS_ONE_EA:
 			logger.info("Chosen search algorithm: (1+1)EA");
 			{
 				OnePlusOneEA<TestSuiteChromosome> ga = new OnePlusOneEA<TestSuiteChromosome>(factory);
-				if (Properties.TEST_ARCHIVE)
-					ga.setArchive(TestsArchive.instance);
-
 				return ga;
 			}
-		case MONOTONICGA:
+		case MU_PLUS_LAMBDA_EA:
+		    logger.info("Chosen search algorithm: (Mu+Lambda)EA");
+            {
+                MuPlusLambdaEA<TestSuiteChromosome> ga = new MuPlusLambdaEA<TestSuiteChromosome>(factory, Properties.MU, Properties.LAMBDA);
+                return ga;
+            }
+		case MU_LAMBDA_EA:
+			logger.info("Chosen search algorithm: (Mu,Lambda)EA");
+			return new MuLambdaEA<TestSuiteChromosome>(factory, Properties.MU, Properties.LAMBDA);
+		case MONOTONIC_GA:
+			logger.info("Chosen search algorithm: MonotonicGA");
 			{
-				logger.info("Chosen search algorithm: SteadyStateGA");
 				MonotonicGA<TestSuiteChromosome> ga = new MonotonicGA<TestSuiteChromosome>(factory);
-	            if (Properties.TEST_ARCHIVE)
-	            	ga.setArchive(TestsArchive.instance);
-
 				if (Properties.REPLACEMENT_FUNCTION == TheReplacementFunction.FITNESSREPLACEMENT) {
 					// user has explicitly asked for this replacement function
 					ga.setReplacementFunction(new FitnessReplacementFunction());
@@ -160,9 +153,6 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 			{
 				logger.info("Chosen search algorithm: GGA");
 				GuidedGA<TestSuiteChromosome> ga = new GuidedGA<TestSuiteChromosome>(factory);
-	            if (Properties.TEST_ARCHIVE)
-	            	ga.setArchive(TestsArchive.instance);
-
 				if (Properties.REPLACEMENT_FUNCTION == TheReplacementFunction.FITNESSREPLACEMENT) {
 					// user has explicitly asked for this replacement function
 					ga.setReplacementFunction(new FitnessReplacementFunction());
@@ -172,13 +162,23 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 				}
 				return ga;
 			}
-		case STEADYSTATEGA:
-			logger.info("Chosen search algorithm: MuPlusLambdaGA");
+		case CELLULAR_GA:
+			logger.info("Chosen search algorithm: CellularGA");
+			{
+				CellularGA<TestSuiteChromosome> ga = new CellularGA<TestSuiteChromosome>(Properties.MODEL, factory);
+				if (Properties.REPLACEMENT_FUNCTION == TheReplacementFunction.FITNESSREPLACEMENT) {
+					// user has explicitly asked for this replacement function
+					ga.setReplacementFunction(new FitnessReplacementFunction());
+				} else {
+					// use default
+					ga.setReplacementFunction(new TestSuiteReplacementFunction());
+				}
+				return ga;
+			}
+		case STEADY_STATE_GA:
+			logger.info("Chosen search algorithm: Steady-StateGA");
 			{
 				SteadyStateGA<TestSuiteChromosome> ga = new SteadyStateGA<>(factory);
-	            if (Properties.TEST_ARCHIVE)
-	            	ga.setArchive(TestsArchive.instance);
-
 				if (Properties.REPLACEMENT_FUNCTION == TheReplacementFunction.FITNESSREPLACEMENT) {
 					// user has explicitly asked for this replacement function
 					ga.setReplacementFunction(new FitnessReplacementFunction());
@@ -188,13 +188,16 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 				}
 				return ga;
 			}
-		case RANDOM:
+		case BREEDER_GA:
+			logger.info("Chosen search algorithm: BreederGA");
+		{
+			BreederGA<TestSuiteChromosome> ga = new BreederGA<>(factory);
+			return ga;
+		}
+		case RANDOM_SEARCH:
 			logger.info("Chosen search algorithm: Random");
 			{
                 RandomSearch<TestSuiteChromosome> ga = new RandomSearch<TestSuiteChromosome>(factory);
-                if (Properties.TEST_ARCHIVE)
-                        ga.setArchive(TestsArchive.instance);
-
                 return ga;
 			}
         case NSGAII:
@@ -206,12 +209,31 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
         case MOSA:
         	logger.info("Chosen search algorithm: MOSA");
             return new MOSA<TestSuiteChromosome>(factory);
+        case ONE_PLUS_LAMBDA_LAMBDA_GA:
+            logger.info("Chosen search algorithm: 1 + (lambda, lambda)GA");
+            {
+              OnePlusLambdaLambdaGA<TestSuiteChromosome> ga = new OnePlusLambdaLambdaGA<TestSuiteChromosome>(factory, Properties.LAMBDA);
+              return ga;
+            }
+        case MIO:
+          logger.info("Chosen search algorithm: MIO");
+          {
+              MIO<TestSuiteChromosome> ga = new MIO<TestSuiteChromosome>(factory);
+              return ga;
+          }
+        case STANDARD_CHEMICAL_REACTION:
+            logger.info("Chosen search algorithm: Standard Chemical Reaction Optimization");
+            {
+              StandardChemicalReaction<TestSuiteChromosome> ga = new StandardChemicalReaction<TestSuiteChromosome>(factory);
+              return ga;
+            }
+        case LIPS:
+        	logger.info("Chosen search algorithm: LIPS");
+            return new LIPS<TestSuiteChromosome>(factory);
 		default:
 			logger.info("Chosen search algorithm: StandardGA");
             {
                 StandardGA<TestSuiteChromosome> ga = new StandardGA<TestSuiteChromosome>(factory);
-                if (Properties.TEST_ARCHIVE)
-                        ga.setArchive(TestsArchive.instance);
                 return ga;
             }
 		}
@@ -244,53 +266,11 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 				        "Coverage crossover function requires test suite mode");
 
 			return new org.evosuite.ga.operators.crossover.CoverageCrossOver();
+		case UNIFORM:
+			return new UniformCrossOver();
 		default:
 			throw new RuntimeException("Unknown crossover function: "
 			        + Properties.CROSSOVER_FUNCTION);
-		}
-	}
-
-	/**
-	 * <p>
-	 * getSecondarySuiteObjective
-	 * </p>
-	 * 
-	 * @param name
-	 *            a {@link java.lang.String} object.
-	 * @return a {@link org.evosuite.search.ga.SecondaryObjective} object.
-	 */
-	protected SecondaryObjective<TestSuiteChromosome> getSecondarySuiteObjective(String name) {
-		if (name.equalsIgnoreCase("size"))
-			return new MinimizeSizeSecondaryObjective();
-		else if (name.equalsIgnoreCase("ibranch"))
-			return new IBranchSecondaryObjective();
-		else if (name.equalsIgnoreCase("archiveibranch"))
-			return new IBranchSecondaryObjective();
-		else if (name.equalsIgnoreCase("maxlength"))
-			return new MinimizeMaxLengthSecondaryObjective();
-		else if (name.equalsIgnoreCase("averagelength"))
-			return new MinimizeAverageLengthSecondaryObjective();
-		else if (name.equalsIgnoreCase("exceptions"))
-			return new MinimizeExceptionsSecondaryObjective();
-		else if (name.equalsIgnoreCase("totallength"))
-			return new MinimizeTotalLengthSecondaryObjective();
-		else if (name.equalsIgnoreCase("rho"))
-			return new RhoTestSuiteSecondaryObjective();
-		else
-			throw new RuntimeException("ERROR: asked for unknown secondary objective \""
-			        + name + "\"");
-	}
-
-	protected void getSecondaryObjectives(GeneticAlgorithm<TestSuiteChromosome> algorithm) {
-		String objectives = Properties.SECONDARY_OBJECTIVE;
-
-		// check if there are no secondary objectives to optimize
-		if (objectives == null || objectives.trim().length() == 0
-		        || objectives.trim().equalsIgnoreCase("none"))
-			return;
-
-		for (String name : objectives.split(":")) {
-			TestSuiteChromosome.addSecondaryObjective(getSecondarySuiteObjective(name.trim()));
 		}
 	}
 	
@@ -349,7 +329,7 @@ public class PropertiesSuiteGAFactory extends PropertiesSearchAlgorithmFactory<T
 		}
 		// ga.addBloatControl(new MaxLengthBloatControl());
 
-		getSecondaryObjectives(ga);
+		TestSuiteSecondaryObjective.setSecondaryObjectives();
 
 		// Some statistics
 		//if (Properties.STRATEGY == Strategy.EVOSUITE)

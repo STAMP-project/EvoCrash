@@ -64,3 +64,4 @@ public class CrashCoverageFactory extends AbstractFitnessFactory<CrashCoverageTe
 	
 
 }
+

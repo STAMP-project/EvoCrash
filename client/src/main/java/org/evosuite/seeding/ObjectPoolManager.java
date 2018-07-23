@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -20,14 +20,32 @@
 package org.evosuite.seeding;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
+import be.vibes.dsl.io.Xml;
+import be.vibes.dsl.selection.Dissimilar;
+import be.vibes.ts.Action;
+import be.vibes.ts.TestSet;
+import be.vibes.ts.Transition;
+import be.vibes.ts.UsageModel;
+import org.apache.commons.lang3.StringUtils;
 import org.evosuite.Properties;
+import org.evosuite.TestGenerationContext;
+import org.evosuite.setup.TestClusterUtils;
 import org.evosuite.testcarver.extraction.CarvingManager;
+import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
+import org.evosuite.testcase.TestFactory;
 import org.evosuite.utils.generic.GenericClass;
 import org.evosuite.utils.LoggingUtils;
+import org.evosuite.utils.generic.GenericConstructor;
+import org.evosuite.utils.generic.GenericMethod;
 
 public class ObjectPoolManager extends ObjectPool {
 
@@ -90,6 +108,215 @@ public class ObjectPoolManager extends ObjectPool {
 			}
 			logger.info("Pool after carving: "+this.getNumberOfClasses()+"/"+this.getNumberOfSequences());
 		}
+
+
+		// fill objectPool from model.
+		if(Properties.CARVE_MODEL){
+			// Collect all of the models
+			File folder = new File(Properties.MODEL_PATH);
+			File[] listOfFiles = folder.listFiles();
+			for (File file : listOfFiles) {
+				if (file.isFile() && !file.getName().startsWith(".") && file.getName().endsWith(".xml") ) {
+					String xmlClassName = file.getName().substring(0, file.getName().length() - 4);
+					if (xmlClassName.indexOf('.')== -1 || xmlClassName.contains(".java.") || Properties.CP_STATIC_ANALYSIS.contains(xmlClassName)){
+						LoggingUtils.getEvoLogger().info("working on callSequences of " + file.getName());
+						try {
+							UsageModel um = Xml.loadUsageModel(Paths.get(folder.getAbsolutePath(), file.getName()).toString());
+	//					TestSet ts = Random.randomSelection(um,Properties.NUMBER_OF_MODEL_TESTS); // For random selection
+							TestSet ts = Dissimilar.from(um).withGlobalMaxDistance(Dissimilar.jaccard()).during(100).generate(Properties.NUMBER_OF_MODEL_TESTS);
+							for (be.vibes.ts.TestCase abstractTestCase : ts) {
+//								LoggingUtils.getEvoLogger().info("Injecting the abstract test case transitions to EvoSuite TestCase object");
+								TestCase newTestCase = new DefaultTestCase();
+								GenericClass genericClass = null;
+								boolean addConstructor = true;
+
+								for (Transition transition : abstractTestCase) {
+									Action sequence = transition.getAction();
+									if (sequence.getName().indexOf(".") != -1) {
+										// Class name:
+										String className = sequence.getName().substring(0, sequence.getName().indexOf("("));
+										className = className.substring(0, className.lastIndexOf('.'));
+										// Method name:
+										String methodName = StringUtils.substringAfterLast(sequence.getName().substring(0, sequence.getName().indexOf("(")), ".");
+										String paramString = sequence.getName().substring(sequence.getName().indexOf("(") + 1);
+
+										if (methodName.equals("<init>")) {
+											addConstructor = false;
+											break;
+										}
+
+										Method target = null;
+										Class<?> sequenceClass = null;
+										try {
+											sequenceClass = Class.forName(className, true, TestGenerationContext.getInstance().getClassLoaderForSUT());
+										} catch (ClassNotFoundException | ExceptionInInitializerError | NoClassDefFoundError e) {
+											LoggingUtils.getEvoLogger().info("coulds not load " + className);
+										}
+										if (sequenceClass != null) {
+											Set<Method> methods = TestClusterUtils.getMethods(sequenceClass);
+											for (Method m : methods) {
+												if (m.getName().equals(methodName)) {
+													target = m;
+													break;
+												} else {
+													target = null;
+												}
+											}
+
+											if (target != null) {
+												GenericMethod genericMethod = new GenericMethod(target, sequenceClass);
+												if (!genericMethod.isStatic()) {
+													break;
+												}
+											}
+										}
+									}
+
+								}
+
+								if (addConstructor) {
+									Transition transition = abstractTestCase.getFirst();
+									Action sequence = transition.getAction();
+									String className = sequence.getName().substring(0, sequence.getName().indexOf("("));
+									className = className.substring(0, className.lastIndexOf('.'));
+									Class<?> sequenceClass = null;
+									try {
+										sequenceClass = Class.forName(className, true, TestGenerationContext.getInstance().getClassLoaderForSUT());
+									} catch (ClassNotFoundException | ExceptionInInitializerError | NoClassDefFoundError e) {
+										LoggingUtils.getEvoLogger().info("coulds not load " + className);
+									}
+									if (sequenceClass != null) {
+										Set<Constructor<?>> constructors = TestClusterUtils.getConstructors(sequenceClass);
+										int i = 0;
+										int chosenConstructorIndex = new Random().nextInt(constructors.size());
+										Constructor<?> chosenConstructor = null;
+										for (Constructor<?> c : constructors) {
+											if (i == chosenConstructorIndex) {
+												chosenConstructor = c;
+												break;
+											}
+											i++;
+										}
+										GenericConstructor genericConstructor = new GenericConstructor(chosenConstructor, sequenceClass);
+										try {
+											TestFactory.getInstance().addConstructor(newTestCase, genericConstructor, newTestCase.size(), 0);
+											LoggingUtils.getEvoLogger().info("constructor {} is added", genericConstructor.getName());
+										} catch (Exception e) {
+											LoggingUtils.getEvoLogger().info("Error in addidng " + genericConstructor.getName() + "  " + e.getMessage());
+										}
+									}
+
+								}
+
+								for (Transition transition : abstractTestCase) {
+									Action sequence = transition.getAction();
+									if (sequence.getName().indexOf(".") != -1) {
+										// Class name:
+										String className = sequence.getName().substring(0, sequence.getName().indexOf("("));
+										className = className.substring(0, className.lastIndexOf('.'));
+										// Method name:
+										String methodName = StringUtils.substringAfterLast(sequence.getName().substring(0, sequence.getName().indexOf("(")), ".");
+										String paramString = sequence.getName().substring(sequence.getName().indexOf("(") + 1);
+										// Params:
+										paramString = paramString.substring(0, paramString.indexOf(")"));
+										String[] paramArr = paramString.split(",");
+	//								try {
+										//Getting the Class
+										Class<?> sequenceClass = null;
+										try {
+											sequenceClass = Class.forName(className, true, TestGenerationContext.getInstance().getClassLoaderForSUT());
+										} catch (ClassNotFoundException | ExceptionInInitializerError | NoClassDefFoundError e) {
+											LoggingUtils.getEvoLogger().info("coulds not load " + className);
+										}
+										if (sequenceClass != null) {
+											genericClass = new GenericClass(sequenceClass);
+											//Getting methods
+											Set<Method> methods = TestClusterUtils.getMethods(sequenceClass);
+											//Getting Constructors
+											Set<Constructor<?>> constructors = TestClusterUtils.getConstructors(sequenceClass);
+
+											// find the method that we want
+											Method target = null;
+											for (Method m : methods) {
+												if (m.getName().equals(methodName)) {
+													target = m;
+													break;
+												} else {
+													target = null;
+												}
+											}
+
+											// Find the constructor that we want
+											Constructor targetC = null;
+											for (Constructor c : constructors) {
+												boolean same = true;
+												int counter = 0;
+
+												for (Class<?> cl : c.getParameterTypes()) {
+													if (paramArr.length > counter && !cl.getName().equals(paramArr[counter])) {
+														same = false;
+													}
+													counter++;
+												}
+												if (same) {
+													targetC = c;
+													break;
+												}
+											}
+
+
+											if (target != null) {
+												GenericMethod genericMethod = new GenericMethod(target, sequenceClass);
+												try {
+													TestFactory.getInstance().addMethod(newTestCase, genericMethod, newTestCase.size(), 0);
+													LoggingUtils.getEvoLogger().info("method call {} is added", genericMethod.getName());
+												} catch (Exception e) {
+													LoggingUtils.getEvoLogger().info("Error in addidng " + genericMethod.getName() + "  " + e.getMessage());
+												}
+											} else if (targetC != null) {
+												GenericConstructor genericConstructor = new GenericConstructor(targetC, sequenceClass);
+												try {
+													TestFactory.getInstance().addConstructor(newTestCase, genericConstructor, newTestCase.size(), 0);
+													LoggingUtils.getEvoLogger().info("constructor {} is added", genericConstructor.getName());
+												} catch (Exception e) {
+													LoggingUtils.getEvoLogger().info("Error in addidng " + genericConstructor.getName() + "  " + e.getMessage());
+												}
+
+											} else {
+												LoggingUtils.getEvoLogger().error("Fail to add the call to add!");
+											}
+										}
+
+	//								} catch (ClassNotFoundException e) {
+	//									LoggingUtils.getEvoLogger().error(className + " did not found!");
+	//								}
+
+									}
+
+								}
+								// Add test case to pool
+								if (genericClass != null)
+									this.addSequence(genericClass, newTestCase);
+							}
+						} catch (Exception e) {
+							LoggingUtils.getEvoLogger().error("Could not load model " + file.getName());
+						}
+				}
+				}
+			}
+
+
+			for (Map.Entry<GenericClass, Set<TestCase>> entry : this.pool.entrySet()){
+				GenericClass clazz = entry.getKey();
+				LoggingUtils.getEvoLogger().info("~~~~~~~~~~~~~~~");
+				LoggingUtils.getEvoLogger().info("Test for class "+clazz.getClassName());
+				Set<TestCase> tests = entry.getValue();
+				for(TestCase test: tests){
+					LoggingUtils.getEvoLogger().info(test.toCode());LoggingUtils.getEvoLogger().info("------");}
+				LoggingUtils.getEvoLogger().info("~~~~~~~~~~~~~~~");
+			}
+		}
+        Properties.ALLOW_OBJECT_POOL_USAGE=true;
 	}
 		
 	public void reset() {

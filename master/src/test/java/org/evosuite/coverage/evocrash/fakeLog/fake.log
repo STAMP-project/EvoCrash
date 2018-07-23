@@ -1,0 +1,6 @@
+java.lang.ClassNotFoundException: byte
+	at org.tudelft.Regular.m4(Regular.java:7)
+	at org.tudelft.RegullarCaller.<init>(RegullarCaller.java:6)
+	at org.tudelft.RegullarCaller2.regullarCaller(RegullarCaller2.java:5)
+	at org.tudelft.Caller.main(Caller.java:9)
+

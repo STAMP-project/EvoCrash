@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -154,6 +154,7 @@ public class CarvingRunListener extends RunListener {
 				continue;
 			}
 			test.setName(description.getMethodName());
+			test.setClassName(description.getClassName());
 			logger.info("Carved test of length " + test.size());
 			try {
 				test.changeClassLoader(TestGenerationContext.getInstance().getClassLoaderForSUT());

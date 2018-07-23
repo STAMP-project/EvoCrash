@@ -18,6 +18,7 @@
 package org.evosuite.ga.metaheuristics.mosa;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -30,7 +31,6 @@ import org.evosuite.ProgressMonitor;
 import org.evosuite.Properties;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.coverage.FitnessFunctions;
-import org.evosuite.coverage.archive.TestsArchive;
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
 import org.evosuite.coverage.exception.ExceptionCoverageFactory;
 import org.evosuite.coverage.exception.ExceptionCoverageHelper;
@@ -53,6 +53,7 @@ import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.TestFitnessFunction;
 import org.evosuite.testcase.execution.ExecutionResult;
+import org.evosuite.testcase.secondaryobjectives.TestCaseSecondaryObjective;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.ConstructorStatement;
 import org.evosuite.testcase.statements.MethodStatement;
@@ -110,6 +111,10 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 			ranking = new FastNonDominatedSorting<T>();
 		else
 			ranking = new RankBasedPreferenceSorting<T>(); // default ranking strategy
+
+		// set the secondary objectives of test cases (useful when MOSA compares two test
+		// cases to, for example, update the archive)
+		TestCaseSecondaryObjective.setSecondaryObjectives();
 	}
 
 	/**
@@ -316,8 +321,13 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 	@Override
 	public List<T> getBestIndividuals() {
 		//get final test suite (i.e., non dominated solutions in Archive)
+		List<T> finalTestSuite = this.getFinalTestSuite();
+		if (finalTestSuite.isEmpty()) {
+			return Arrays.asList((T) new TestSuiteChromosome());
+		}
+
 		TestSuiteChromosome bestTestCases = new TestSuiteChromosome();
-		for (T test : getFinalTestSuite()) {
+		for (T test : finalTestSuite) {
 			bestTestCases.addTest((TestChromosome) test);
 		}
 		for (FitnessFunction<T> f : this.getCoveredGoals()){

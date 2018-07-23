@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -42,6 +42,7 @@ import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testsuite.TestSuiteChromosome;
 import org.evosuite.utils.DebuggingObjectOutputStream;
+import org.evosuite.utils.LoggingUtils;
 import org.evosuite.utils.generic.GenericClass;
 import org.evosuite.utils.Randomness;
 import org.junit.runner.JUnitCore;
@@ -59,6 +60,8 @@ public class ObjectPool implements Serializable {
 
 	/** The actual object pool */
 	protected final Map<GenericClass, Set<TestCase>> pool = new HashMap<GenericClass, Set<TestCase>>();
+
+	protected final Map<GenericClass, Set<TestCase>> usedPool = new HashMap<GenericClass, Set<TestCase>>();
 
 	protected static final Logger logger = LoggerFactory.getLogger(ObjectPool.class);
 
@@ -99,6 +102,27 @@ public class ObjectPool implements Serializable {
 	 */
 	public TestCase getRandomSequence(GenericClass clazz) {
 		return Randomness.choice(getSequences(clazz));
+	}
+
+	public void resetUsedSequences(GenericClass clazz){
+		for (TestCase seq: usedPool.get(clazz)){
+			getSequences(clazz).add(seq);
+		}
+		usedPool.get(clazz).clear();
+		LoggingUtils.getEvoLogger().info(clazz.getClassName()+" pool resetting.");
+	}
+	public TestCase getRandomSequenceFromModel(GenericClass clazz){
+		if (getSequences(clazz).size() == 0) {
+			resetUsedSequences(clazz);
+		}
+		TestCase result = Randomness.choice(getSequences(clazz));
+		getSequences(clazz).remove(result);
+		if (!usedPool.containsKey(clazz))
+			usedPool.put(clazz, new HashSet<TestCase>());
+		usedPool.get(clazz).add(result);
+//		LoggingUtils.getEvoLogger().info("using sequence {} of object {}.",result.toCode(),clazz.getClassName());
+		return result;
+
 	}
 
 	/**

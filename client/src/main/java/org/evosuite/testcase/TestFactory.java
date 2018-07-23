@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -19,11 +19,7 @@
  */
 package org.evosuite.testcase;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +35,8 @@ import org.evosuite.Properties;
 import org.evosuite.TestGenerationContext;
 import org.evosuite.TimeController;
 import org.evosuite.ga.ConstructionFailedException;
+import org.evosuite.rmi.ClientServices;
+import org.evosuite.rmi.service.ClientState;
 import org.evosuite.runtime.annotation.Constraints;
 import org.evosuite.runtime.javaee.injection.Injector;
 import org.evosuite.runtime.javaee.javax.servlet.EvoServletState;
@@ -180,6 +178,25 @@ public class TestFactory {
 
 		//TODO this needs to be fixed once we handle Generics in mocks
 		FunctionalMockStatement fms = new FunctionalMockStatement(test, type, new GenericClass(type).getRawClass());
+		VariableReference ref = test.addStatement(fms, position);
+
+		//note: when we add a new mock, by default it will have no parameter at the beginning
+
+		return ref;
+	}
+
+	public VariableReference addFunctionalMockForAbstractClass(TestCase test, Type type, int position, int recursionDepth)
+			throws ConstructionFailedException, IllegalArgumentException{
+
+		Inputs.checkNull(test, type);
+
+		if (recursionDepth > Properties.MAX_RECURSION) {
+			logger.debug("Max recursion depth reached");
+			throw new ConstructionFailedException("Max recursion depth reached");
+		}
+
+		//TODO this needs to be fixed once we handle Generics in mocks
+		FunctionalMockForAbstractClassStatement fms = new FunctionalMockForAbstractClassStatement(test, type, new GenericClass(type).getRawClass());
 		VariableReference ref = test.addStatement(fms, position);
 
 		//note: when we add a new mock, by default it will have no parameter at the beginning
@@ -474,7 +491,7 @@ public class TestFactory {
 		FieldReference fieldVar = new FieldReference(test, field, callee);
 		int length = test.size();
 		VariableReference value = createOrReuseVariable(test, fieldVar.getType(),
-				position, 0, callee, true, false, false);
+				position, 0, callee, true, false, true);
 
 		int newLength = test.size();
 		position += (newLength - length);
@@ -797,30 +814,75 @@ public class TestFactory {
 				return createNull(test, type, position, recursionDepth);
 			}
 
-			ObjectPoolManager objectPool = ObjectPoolManager.getInstance();
-			if (Randomness.nextDouble() <= Properties.P_OBJECT_POOL
-			        && objectPool.hasSequence(clazz)) {
+			if(Properties.ALLOW_OBJECT_POOL_USAGE) {
+				ObjectPoolManager objectPool = ObjectPoolManager.getInstance();
+				if (Properties.CARVE_MODEL) {
+					if (objectPool.hasSequence(clazz) && useObjectPool(clazz)) {
+						TestCase sequence = objectPool.getRandomSequenceFromModel(clazz);
+						logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
+						VariableReference targetObject = sequence.getLastObject(type);
+						int returnPos = position + targetObject.getStPosition();
 
-				TestCase sequence = objectPool.getRandomSequence(clazz);
-				logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
-				VariableReference targetObject = sequence.getLastObject(type);
-				int returnPos = position + targetObject.getStPosition();
+						for (int i = 0; i < sequence.size(); i++) {
+							Statement s = sequence.getStatement(i);
+							test.addStatement(s.copy(test, position), position + i);
+						}
 
-				for (int i = 0; i < sequence.size(); i++) {
-					Statement s = sequence.getStatement(i);
-					test.addStatement(s.copy(test, position), position + i);
+						logger.debug("Return type of object sequence: {}",
+								test.getStatement(returnPos).getReturnValue().getClassName());
+
+						return test.getStatement(returnPos).getReturnValue();
+					}
+				}else {
+					if (Randomness.nextDouble() <= Properties.P_OBJECT_POOL && objectPool.hasSequence(clazz)) {
+						TestCase sequence = objectPool.getRandomSequence(clazz);
+						logger.debug("Using a sequence from the object pool to satisfy the type: {}", type);
+						VariableReference targetObject = sequence.getLastObject(type);
+						int returnPos = position + targetObject.getStPosition();
+
+						for (int i = 0; i < sequence.size(); i++) {
+							Statement s = sequence.getStatement(i);
+							test.addStatement(s.copy(test, position), position + i);
+						}
+
+						logger.debug("Return type of object sequence: {}",
+								test.getStatement(returnPos).getReturnValue().getClassName());
+
+						return test.getStatement(returnPos).getReturnValue();
+					}
 				}
-
-				logger.debug("Return type of object sequence: {}",
-				         test.getStatement(returnPos).getReturnValue().getClassName());
-
-				return test.getStatement(returnPos).getReturnValue();
 			}
-
 			logger.debug("Creating new object for type {}",type);
 			return createObject(test, type, position, recursionDepth,
 					generatorRefToExclude, allowNull, canUseMocks,canReuseExistingVariables);
 		}
+	}
+
+
+	private boolean useObjectPool(GenericClass clazz){
+		double prob ;
+		ClientState cst = ClientServices.getInstance().getClientNode().getState();
+		boolean initPassed = (cst.getNumPhase()>2);
+		boolean targetClass = (clazz.getClassName().equals(Properties.TARGET_CLASS));
+
+		if(!initPassed){
+			if(!targetClass){
+				prob= Properties.P_MODEL_POOL_OTHER_INIT;
+			}else{
+				prob=Properties.P_MODEL_POOL_TARGET_INIT;
+			}
+		}else {
+			if (!targetClass) {
+				prob = Properties.P_MODEL_POOL_OTHER_MUTATE;
+			} else {
+				prob = Properties.P_MODEL_POOL_TARGET_MUTATE;
+			}
+		}
+
+		if(Randomness.nextDouble() <= prob)
+			return true;
+		else
+			return false;
 	}
 
 	/**
@@ -1136,7 +1198,7 @@ public class TestFactory {
 				logger.debug("Chosen: " + clazz);
 			}
 			Type parameterType = clazz.getParameterTypes().get(0);
-			if (GenericTypeReflector.erase(parameterType).equals(Class.class)) {
+			if (!(parameterType instanceof WildcardType) && GenericTypeReflector.erase(parameterType).equals(Class.class)) {
 				throw new ConstructionFailedException(
 				        "Cannot instantiate a class with a class");
 			}
@@ -1200,7 +1262,7 @@ public class TestFactory {
 		GenericClass clazz = new GenericClass(type);
 
 		logger.debug("Going to create object for type {}", type);
-		VariableReference ret;
+		VariableReference ret = null;
 
 		if( canUseFunctionalMocks && TimeController.getInstance().getPhasePercentage() >= Properties.FUNCTIONAL_MOCKING_PERCENT &&
 				Randomness.nextDouble() < Properties.P_FUNCTIONAL_MOCKING &&
@@ -1244,19 +1306,27 @@ public class TestFactory {
 					}
 				}
 
-				if (canUseFunctionalMocks && (Properties.MOCK_IF_NO_GENERATOR || Properties.P_FUNCTIONAL_MOCKING > 0) && FunctionalMockStatement.canBeFunctionalMocked(type)) {
-				/*
-					Even if mocking is not active yet in this phase, if we have
-					no generator for a type, we use mocking directly
-				 */
-					logger.debug("Using mock for type {}", type);
-					ret = addFunctionalMock(test, type, position, recursionDepth + 1);
-				} else {
+				if (canUseFunctionalMocks && (Properties.MOCK_IF_NO_GENERATOR || Properties.P_FUNCTIONAL_MOCKING > 0)) {
+					/*
+						Even if mocking is not active yet in this phase, if we have
+						no generator for a type, we use mocking directly
+				 	*/
+					if (FunctionalMockStatement.canBeFunctionalMocked(type)) {
+						logger.debug("Using mock for type {}", type);
+						ret = addFunctionalMock(test, type, position, recursionDepth + 1);
+					} else if (clazz.isAbstract() && FunctionalMockStatement.canBeFunctionalMockedIncludingSUT(type)) {
+						{
+							logger.debug("Using mock for abstract type {}", type);
+							ret = addFunctionalMockForAbstractClass(test, type, position, recursionDepth + 1);
+						}
+					}
+				}
+				if(ret == null) {
+					logger.debug("No mock solution found: {}, {}, {}, {}", canUseFunctionalMocks, Properties.MOCK_IF_NO_GENERATOR, FunctionalMockStatement.canBeFunctionalMocked(type), FunctionalMockStatement.canBeFunctionalMockedIncludingSUT(type));
 
 					if(!TestCluster.getInstance().hasGenerator(type)) {
 						logger.debug("No generators found for {}, attempting to resolve dependencies", type);
-						TestClusterGenerator clusterGenerator = new TestClusterGenerator(
-								DependencyAnalysis.getInheritanceTree());
+						TestClusterGenerator clusterGenerator = TestGenerationContext.getInstance().getTestClusterGenerator();
 						Class<?> mock = MockList.getMockClass(clazz.getRawClass().getCanonicalName());
 						if (mock != null) {
 							clusterGenerator.addNewDependencies(Arrays.asList(mock));
@@ -1345,7 +1415,7 @@ public class TestFactory {
 				logger.debug(" Choosing from {} existing objects: {}", objects.size(), Arrays.toString(objects.toArray()));
 			}
 			VariableReference reference = Randomness.choice(objects);
-			logger.debug(" Using existing object of type {}: {}", parameterType, reference);
+			//logger.debug(" Using existing object of type {}: {}", parameterType, reference);
 			return reference;
 		}
 
@@ -2172,7 +2242,7 @@ public class TestFactory {
 					Type target = m.getOwnerType();
 
 					if (!test.hasObject(target, position)) {
-						callee = createObject(test, target, position, 0, null, true, false,true); //no FM for SUT
+						callee = createObject(test, target, position, 0, null, false, false,true); //no FM for SUT
 						position += test.size() - previousLength;
 						previousLength = test.size();
 					} else {

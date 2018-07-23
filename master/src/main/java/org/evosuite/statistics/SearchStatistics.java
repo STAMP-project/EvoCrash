@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -40,6 +40,7 @@ import org.evosuite.result.TestGenerationResult;
 import org.evosuite.rmi.MasterServices;
 import org.evosuite.rmi.service.ClientState;
 import org.evosuite.rmi.service.ClientStateInformation;
+import org.evosuite.runtime.util.AtMostOnceLogger;
 import org.evosuite.statistics.backend.*;
 import org.evosuite.testsuite.TestSuiteChromosome;
 import org.evosuite.utils.Listener;
@@ -174,6 +175,11 @@ public class SearchStatistics implements Listener<ClientStateInformation>{
 	public void currentIndividual(String rmiClientIdentifier, Chromosome individual) {
 		if(backend == null)
 			return;
+
+		if(!(individual instanceof TestSuiteChromosome)) {
+			AtMostOnceLogger.warn(logger, "searchStatistics expected a TestSuiteChromosome");
+			return;
+		}
 
 		logger.debug("Received individual");
 		bestIndividual.put(rmiClientIdentifier, (TestSuiteChromosome) individual);
@@ -787,19 +793,19 @@ public class SearchStatistics implements Listener<ClientStateInformation>{
             return individual.getFitnessInstanceOf(LineCoverageSuiteFitness.class);
         }
     }
-    
+
     private static class CrashFitnessSequenceOutputVariableFactory extends SequenceOutputVariableFactory<Double> {
 
-        public CrashFitnessSequenceOutputVariableFactory() {
-            super(RuntimeVariable.CrashFitnessTimeline);
-        }
+    	public CrashFitnessSequenceOutputVariableFactory() {
+    	    super(RuntimeVariable.CrashFitnessTimeline);
+    	}
 
-        @Override
-        public Double getValue(TestSuiteChromosome individual) {
-            return individual.getFitnessInstanceOf(CrashCoverageSuiteFitness.class);
-        }
+    	@Override
+    	public Double getValue(TestSuiteChromosome individual) {
+    	    return individual.getFitnessInstanceOf(CrashCoverageSuiteFitness.class);
+    	}
     }
-
+    
     private static class LineCoverageSequenceOutputVariableFactory extends SequenceOutputVariableFactory<Double> {
 
         public LineCoverageSequenceOutputVariableFactory() {
@@ -815,13 +821,13 @@ public class SearchStatistics implements Listener<ClientStateInformation>{
     private static class CrashCoverageSequenceOutputVariableFactory extends SequenceOutputVariableFactory<Double> {
 
         public CrashCoverageSequenceOutputVariableFactory() {
-            super(RuntimeVariable.CrashCoverageTimeline);
+    	    super(RuntimeVariable.CrashCoverageTimeline);
         }
 
         @Override
-        public Double getValue(TestSuiteChromosome individual) {
-            return individual.getCoverageInstanceOf(CrashCoverageSuiteFitness.class);
-        }
+    	public Double getValue(TestSuiteChromosome individual) {
+    	    return individual.getCoverageInstanceOf(CrashCoverageSuiteFitness.class);
+    	}
     }
 
     private static class OutputFitnessSequenceOutputVariableFactory extends SequenceOutputVariableFactory<Double> {

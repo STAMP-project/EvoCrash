@@ -1,0 +1,6 @@
+java.lang.ClassCastException: org.apache.lucene.document.Field cannot be cast to java.lang.String
+	at org.xwiki.search.solr.internal.reference.SolrEntityReferenceResolver.getWikiReference(SolrEntityReferenceResolver.java:93)
+	at org.xwiki.search.solr.internal.reference.SolrEntityReferenceResolver.getEntityReference(SolrEntityReferenceResolver.java:70)
+	at org.xwiki.search.solr.internal.reference.SolrEntityReferenceResolver.resolve(SolrEntityReferenceResolver.java:63)
+	at org.xwiki.search.solr.internal.reference.SolrDocumentReferenceResolver.resolve(SolrDocumentReferenceResolver.java:48)
+	at org.xwiki.search.solr.internal.SolrIndexAvailableLocalesListener$1.streamSolrDocument(SolrIndexAvailableLocalesListener.java:169)

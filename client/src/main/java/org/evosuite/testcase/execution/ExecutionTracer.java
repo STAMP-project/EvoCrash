@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -256,7 +256,7 @@ public class ExecutionTracer {
 	 *            a {@link java.lang.String} object.
 	 * @param caller
 	 *            a {@link java.lang.Object} object.
-	 * @throws org.evosuite.testcase.TestCaseExecutor$TimeoutExceeded
+	 * @throws org.evosuite.testcase.execution.TestCaseExecutor$TimeoutExceeded
 	 *             if any.
 	 */
 	public static void enteredMethod(String classname, String methodname, Object caller)

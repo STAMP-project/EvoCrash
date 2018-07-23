@@ -166,6 +166,7 @@ public class RootMethodTestChromosomeFactory extends AllMethodsTestChromosomeFac
 	 */
 	@Override
 	public TestChromosome getChromosome() {
+		LoggingUtils.getEvoLogger().info("OLD");
 		TestChromosome c = new TestChromosome();
 		c.setTestCase(getRandomTestCase(Properties.CHROMOSOME_LENGTH));
 		return c;

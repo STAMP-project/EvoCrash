@@ -20,12 +20,16 @@
 package org.evosuite.ga.metaheuristics;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.util.*;
 
-import org.evosuite.ga.metaheuristics.MonotonicGA;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.evosuite.coverage.evocrash.CrashCoverageInfos;
+import org.evosuite.seeding.CallSequencesPoolManager;
+import org.evosuite.testcarver.extraction.CarvingManager;
+import org.evosuite.testcarver.testcase.CarvedTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
@@ -36,7 +40,6 @@ import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.ChromosomeFactory;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.ga.FitnessFunction;
-//import org.crash.client.crashcoverage.CrashCoverageTestFitness;
 import org.evosuite.coverage.evocrash.CrashCoverageTestFitness;
 import org.evosuite.Properties;
 import org.evosuite.TimeController;
@@ -46,7 +49,6 @@ import org.slf4j.LoggerFactory;
 import org.evosuite.utils.LoggingUtils;
 import org.evosuite.utils.Randomness;
 
-import org.evosuite.coverage.evocrash.CrashCoverageInfos;
 
 public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 
@@ -62,16 +64,63 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 	
 	@Override
 	public void generateSolution() {
-		
+
+
+		// ACCESED_CLASSES = True -> execute all of the test cases available and save tests of each of the classes in the project in a single JSON file (accessed_classes.json)
+		// The process will stop after exporting the JSON file.
+		if(Properties.ACCESED_CLASSES){
+			HashMap<String,List<String>> testsForClasses = new HashMap<String,List<String>>();
+			CarvingManager manager = CarvingManager.getInstance();
+			for(Class<?> targetClass : manager.getClassesWithTests()) {
+				List<TestCase> tests = manager.getTestsForClass(targetClass);
+				List<String> temp = new ArrayList<String>();
+				for(TestCase test : tests) {
+					String testCaseName = ((CarvedTestCase)test).getClassName()+"."+((CarvedTestCase)test).getName();
+					temp.add(testCaseName);
+				}
+
+				testsForClasses.put(targetClass.getName(),temp);
+			}
+
+			try (Writer writer = new FileWriter(Properties.ACCESSED_CLASSES_OUTPUT_PATH)) {
+				Gson gson = new GsonBuilder().create();
+				gson.toJson(testsForClasses, writer);
+			}catch (Exception e){
+				LoggingUtils.getEvoLogger().error("Could not write the JSON file");
+			}finally {
+				LoggingUtils.getEvoLogger().info("* Accessed_classes is saved!");
+				System.exit(0);
+			}
+
+		}
+
+		if (Properties.MODEL_SUT) {
+			// carving tests and analyse the source code statically before starting search
+			CallSequencesPoolManager callseqsManager = CallSequencesPoolManager.getInstance();
+			callseqsManager.report();
+			LoggingUtils.getEvoLogger().info("saving pool");
+			callseqsManager.savePool();
+			LoggingUtils.getEvoLogger().info("* Model is saved!");
+			System.exit(0);
+//			LoggingUtils.getEvoLogger().info("reading pool");
+//			callseqsManager.readPoolFromTheFile("CallSequencePoolJson.txt");
+//			LoggingUtils.getEvoLogger().info("reporting again");
+//			callseqsManager.report();
+		}else{
+
+
+		CrashCoverageInfos crashInfos = CrashCoverageInfos.getInstance();
 		long startTime = System.currentTimeMillis();
-		CrashCoverageInfos.getInstance().setStartTime(startTime);
+		crashInfos.setStartTime(startTime);
+
 		if (Properties.ENABLE_SECONDARY_OBJECTIVE_AFTER > 0 || Properties.ENABLE_SECONDARY_OBJECTIVE_STARVATION) {
 			disableFirstSecondaryCriterion();
 		}
 		if (population.isEmpty()) {
 			initializePopulation();
-			assert!population.isEmpty() : "Could not create any test";
+			assert !population.isEmpty() : "Could not create any test";
 		}
+
 
 		logger.debug("Starting evolution");
 		int starvationCounter = 0;
@@ -81,6 +130,9 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 			bestFitness = 0.0;
 			lastBestFitness = 0.0;
 		}
+		double bestFFinInitialization = getBestFitness();
+		crashInfos.setPreviousFitnessFunction(bestFFinInitialization);
+		LoggingUtils.getEvoLogger().info("@@ff:(" + bestFFinInitialization + ";" + crashInfos.getnumberOfTries() + ";" + crashInfos.getFFDuration() + ")");
 		while (!isFinished()) {
 			logger.info("Population size before: " + population.size());
 			// related to Properties.ENABLE_SECONDARY_OBJECTIVE_AFTER;
@@ -89,19 +141,20 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 
 			{
 				double bestFitnessBeforeEvolution = getBestFitness();
+
 				evolve();
 				sortPopulation();
 				double bestFitnessAfterEvolution = getBestFitness();
 				//LoggingUtils.getEvoLogger().info("Fitness>>> "+bestFitnessAfterEvolution);
 
 				if (getFitnessFunction().isMaximizationFunction())
-					assert(bestFitnessAfterEvolution >= (bestFitnessBeforeEvolution
+					assert (bestFitnessAfterEvolution >= (bestFitnessBeforeEvolution
 							- DELTA)) : "best fitness before evolve()/sortPopulation() was: " + bestFitnessBeforeEvolution
-									+ ", now best fitness is " + bestFitnessAfterEvolution;
+							+ ", now best fitness is " + bestFitnessAfterEvolution;
 				else
-					assert(bestFitnessAfterEvolution <= (bestFitnessBeforeEvolution
+					assert (bestFitnessAfterEvolution <= (bestFitnessBeforeEvolution
 							+ DELTA)) : "best fitness before evolve()/sortPopulation() was: " + bestFitnessBeforeEvolution
-									+ ", now best fitness is " + bestFitnessAfterEvolution;
+							+ ", now best fitness is " + bestFitnessAfterEvolution;
 			}
 
 			{
@@ -110,13 +163,13 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 				double bestFitnessAfterLocalSearch = getBestFitness();
 
 				if (getFitnessFunction().isMaximizationFunction())
-					assert(bestFitnessAfterLocalSearch >= (bestFitnessBeforeLocalSearch
+					assert (bestFitnessAfterLocalSearch >= (bestFitnessBeforeLocalSearch
 							- DELTA)) : "best fitness before applyLocalSearch() was: " + bestFitnessBeforeLocalSearch
-									+ ", now best fitness is " + bestFitnessAfterLocalSearch;
+							+ ", now best fitness is " + bestFitnessAfterLocalSearch;
 				else
-					assert(bestFitnessAfterLocalSearch <= (bestFitnessBeforeLocalSearch
+					assert (bestFitnessAfterLocalSearch <= (bestFitnessBeforeLocalSearch
 							+ DELTA)) : "best fitness before applyLocalSearch() was: " + bestFitnessBeforeLocalSearch
-									+ ", now best fitness is " + bestFitnessAfterLocalSearch;
+							+ ", now best fitness is " + bestFitnessAfterLocalSearch;
 			}
 
 			/*
@@ -131,12 +184,15 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 			// sortPopulation();
 
 			double newFitness = getBestFitness();
-
+			if (crashInfos.getPreviousFitnessFunction() != newFitness) {
+				crashInfos.setPreviousFitnessFunction(newFitness);
+				LoggingUtils.getEvoLogger().info("@@ff:(" + newFitness + ";" + crashInfos.getnumberOfTries() + ";" + crashInfos.getFFDuration() + ")");
+			}
 			if (getFitnessFunction().isMaximizationFunction())
-				assert(newFitness >= (bestFitness - DELTA)) : "best fitness was: " + bestFitness
+				assert (newFitness >= (bestFitness - DELTA)) : "best fitness was: " + bestFitness
 						+ ", now best fitness is " + newFitness;
 			else
-				assert(newFitness <= (bestFitness + DELTA)) : "best fitness was: " + bestFitness
+				assert (newFitness <= (bestFitness + DELTA)) : "best fitness was: " + bestFitness
 						+ ", now best fitness is " + newFitness;
 			bestFitness = newFitness;
 
@@ -160,35 +216,36 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 //			LoggingUtils.getEvoLogger().error("Best individual has fitness: " + population.get(0).getFitness());
 //			LoggingUtils.getEvoLogger().error("Worst individual has fitness: " + population.get(population.size() - 1).getFitness() + "\n\n");
 		}
-		
+
 		long endTime = System.currentTimeMillis();
-		long totalTime = (endTime - startTime)/1000;
+		long totalTime = (endTime - startTime) / 1000;
 ///		if(population.get(0).getFitness() == 0.0) {
-			T best = population.get(0);
-			ExecutionResult results = ((TestChromosome) best).getLastExecutionResult();
-			int index = results.getFirstPositionOfThrownException();
-			Throwable thrownException = results.getExceptionThrownAtPosition(index);
-			LoggingUtils.getEvoLogger().info("* EvoCrash: the generated stack trace: \n" );
-			for (int i=0; i<thrownException.getStackTrace().length; i++){
-				LoggingUtils.getEvoLogger().info("" + thrownException.getStackTrace()[i]);
-			}
-			TestChromosome tc = (TestChromosome) best;
-			LoggingUtils.getEvoLogger().error("\n* EvoCrash: the generated test case: \n" +tc.getTestCase().toCode());
+		T best = population.get(0);
+		ExecutionResult results = ((TestChromosome) best).getLastExecutionResult();
+		int index = results.getFirstPositionOfThrownException();
+		Throwable thrownException = results.getExceptionThrownAtPosition(index);
+		LoggingUtils.getEvoLogger().info("* EvoCrash: the generated stack trace: \n");
+		for (int i = 0; i < thrownException.getStackTrace().length; i++) {
+			LoggingUtils.getEvoLogger().info("" + thrownException.getStackTrace()[i]);
+		}
+		TestChromosome tc = (TestChromosome) best;
+		LoggingUtils.getEvoLogger().error("\n* EvoCrash: the generated test case: \n" + tc.getTestCase().toCode());
 //	    }
-			
-		LoggingUtils.getEvoLogger().info(">>>>>>>>>>>>>>>>>>>>>>>>>>>GGA was done in " + totalTime+ "!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+
+		LoggingUtils.getEvoLogger().info(">>>>>>>>>>>>>>>>>>>>>>>>>>>GGA was done in " + totalTime + "!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 		// archive
 		TimeController.execute(this::updateBestIndividualFromArchive, "update from archive", 5_000);
-		long FFTimePassed = CrashCoverageInfos.getInstance().getFFTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-		LoggingUtils.getEvoLogger().info("* Fitness Function/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getFitnessFunctionMin()+"/"+FFTimePassed+"/"+CrashCoverageInfos.getInstance().getFFTries());
-		long LCTimePassed = CrashCoverageInfos.getInstance().getLCTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-		LoggingUtils.getEvoLogger().info("* LineCoverage Fitness/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getLineCoverageMin()+"/"+LCTimePassed+"/"+CrashCoverageInfos.getInstance().getLCTries());
-		long EHTimePassed = CrashCoverageInfos.getInstance().getEHTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-		LoggingUtils.getEvoLogger().info("* Exception Happened/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getExceptionHappenedMin()+"/"+EHTimePassed+"/"+CrashCoverageInfos.getInstance().getEHTries());
-		long SSTimePassed = CrashCoverageInfos.getInstance().getSSTime() - CrashCoverageInfos.getInstance().getCurrentTime();
-		LoggingUtils.getEvoLogger().info("* Stack Trace Similarity/Time passed/Number of tries: "+CrashCoverageInfos.getInstance().getStackTraceSimilarityMin()+"/"+SSTimePassed+"/"+CrashCoverageInfos.getInstance().getSSTries());
-		LoggingUtils.getEvoLogger().info("* number of total tries: "+ CrashCoverageInfos.getInstance().getnumberOfTries());
+		long FFTimePassed = crashInfos.getFFTime() - crashInfos.getStartTime();
+		LoggingUtils.getEvoLogger().info("* Fitness Function/Time passed/Number of tries: " + crashInfos.getFitnessFunctionMin() + "/" + FFTimePassed + "/" + crashInfos.getFFTries());
+		long LCTimePassed = crashInfos.getLCTime() - crashInfos.getStartTime();
+		LoggingUtils.getEvoLogger().info("* LineCoverage Fitness/Time passed/Number of tries: " + crashInfos.getLineCoverageMin() + "/" + LCTimePassed + "/" + crashInfos.getLCTries());
+		long EHTimePassed = crashInfos.getEHTime() - crashInfos.getStartTime();
+		LoggingUtils.getEvoLogger().info("* Exception Happened/Time passed/Number of tries: " + crashInfos.getExceptionHappenedMin() + "/" + EHTimePassed + "/" + crashInfos.getEHTries());
+		long SSTimePassed = crashInfos.getSSTime() - crashInfos.getStartTime();
+		LoggingUtils.getEvoLogger().info("* Stack Trace Similarity/Time passed/Number of tries: " + crashInfos.getStackTraceSimilarityMin() + "/" + SSTimePassed + "/" + crashInfos.getSSTries());
+		LoggingUtils.getEvoLogger().info("* number of total tries: " + crashInfos.getnumberOfTries());
 		notifySearchFinished();
+	}
 	}
 	
 	
@@ -200,12 +257,11 @@ public class GuidedGA <T extends Chromosome> extends MonotonicGA <T> {
 	@Override
 	protected void evolve() {
 		List<T> newGeneration = new ArrayList<T>();
-		//LoggingUtils.getEvoLogger().error("* EvoCrash: Evolving individuals...");
+//		LoggingUtils.getEvoLogger().error("* EvoCrash: Evolving individuals...");
 		// Elitism
 		logger.debug("Elitism");
 		newGeneration.addAll(elitism());
 		while (!isNextPopulationFull(newGeneration) && !isFinished()) {
-//			LoggingUtils.getEvoLogger().error("* LOOP *");
 			logger.debug("Generating offspring");
 			T parent1 = selectionFunction.select(population);
 			T parent2;

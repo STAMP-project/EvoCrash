@@ -33,31 +33,33 @@ import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.utils.LoggingUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
 @NotThreadSafe
+@Ignore
 public class ACC_4_Test_SingleObjetive {
-
+	
 	@Test
 	public void testACC_4_frameLevel_1(){
-
+		
 		String user_dir = System.getProperty("user.dir");
-
+		
 		Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash" );
 		String bin_path = binpath.toString();
-
+		
 		Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "ACC-4" , "ACC-4.log");
 		String logPath = logpath.toString();
-
+		
 		Path dep_1 = Paths.get(bin_path, "ACC-2.0", "commons-collections-2.0.jar");
 		String dependency_1 = dep_1.toString();
-
-		String targetClass = LogParser.getTargetClass(logPath, 1);
-
+		
+		String targetClass = LogParser.getTargetClass(logPath, 3);
+		
 		Path testpath = Paths.get(user_dir, "GGA-tests");
 		String test_path = testpath.toString();
-
+		
 		String[] command = {
 				"-generateTests",
 				"-Dcriterion=CRASH",
@@ -66,29 +68,32 @@ public class ACC_4_Test_SingleObjetive {
 				"-Dminimize=TRUE",
 				"-Dalgorithm=PICKYMONOTONICGA",
 				"-Dstrategy=ONEBRANCH",
-				//"-Dranking_type=FAST_NON_DOMINATED_SORTING",
+				"-Dtest_factory=ROOT_PUBLIC_METHOD",
 				"-Doutput_variables=TARGET_CLASS,algorithm,criterion,Total_Goals,Covered_Goals,Generations,Total_Time,Size,Result_Size,Length,Result_Length",
+				"-Dreport_dir=spreadsheet",
 				"-Dheadless_chicken_test=FALSE",
 				"-Dpopulation=80",
-				"-Dsearch_budget=50",
-				"-Dtarget_frame=1",
+				"-Dstopping_condition=MAXFITNESSEVALUATIONS",
+				"-Dsearch_budget=62328",
+				"-Dtarget_frame=3",
 				"-Drandom_tests=0",
 				"-Dvirtual_fs=TRUE",
 				"-Dreplace_calls=FALSE",
-				"-Dreport_dir=spreadsheets",
 				"-Dlog_goals=TRUE",
 				"-Dreset_static_fields=FALSE",
 				"-DEXP="+ logPath,
 				"-Dvirtual_fs=TRUE",
-				"-Duse_separate_classloader=FALSE",
-				"-Dvirtual_net=FALSE",
-				"-Dreplace_calls=FALSE",
+                "-Duse_separate_classloader=FALSE",
+                "-Dvirtual_net=FALSE",
+                "-Dreplace_calls=FALSE",
 				"-projectCP",
 				dependency_1,
-				"-class",
+				"-class", 
 				targetClass
-		};
+				};
 
+
+		
 		EvoSuite evosuite = new EvoSuite();
 		Object result = evosuite.parseCommandLine(command);
 		List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
@@ -101,7 +106,7 @@ public class ACC_4_Test_SingleObjetive {
 			TestChromosome best = (TestChromosome) ga.getBestIndividual();
 			Assert.assertEquals(0.0, best.getFitness(), 0);
 		}
-
+	
 	}
 
 
@@ -112,5 +117,5 @@ public class ACC_4_Test_SingleObjetive {
 		assert(results.size() == 1);
 		return results.get(0).get(0).getGeneticAlgorithm();
 	}
-
+	
 }

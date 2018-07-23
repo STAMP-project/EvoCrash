@@ -82,8 +82,26 @@ public class LogParser {
 		
 		return targetClass;
 	}
-	
-	
+
+	public static int getNumberOfFrames(String logPath){
+		int counter = -1;
+		try {
+			// Opening the log file
+			File file = new File(logPath);
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			// Skipping the first line in the crash stack trace
+			while(br.readLine() != null)
+				counter++;
+			br.close();
+			return counter;
+			//going to parse the stack frames
+			} catch (Exception e){
+			LoggingUtils.getEvoLogger().error("* LogParser: Failed to parse the log file to get the target class!");
+		}finally {
+				return counter;
+		}
+	}
+
 //*******************************************************************************
 // This block prepares the stack trace to be used by the fitness function
 	

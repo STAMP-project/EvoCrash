@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2017 Gordon Fraser, Andrea Arcuri and EvoSuite
+ * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
  * contributors
  *
  * This file is part of EvoSuite.
@@ -114,7 +114,6 @@ public class ResourceController implements SearchListener, StoppingCondition,
 			 */
 			stopComputation = true;
 			ga.addStoppingCondition(this);
-			LoggingUtils.getEvoLogger().info("WARN>>>>>>>: Stalled threards are too many. Stopping the search.");
 			logger.warn("Shutting down the search due to running out of computational resources");
 		}
 	}
