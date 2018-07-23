@@ -24,6 +24,7 @@ import org.evosuite.ga.metaheuristics.GeneticAlgorithm;
 import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -37,6 +38,7 @@ import java.util.List;
 
 
 @NotThreadSafe
+@Ignore
 public class XWIKI_13031_Test {
     private int frameLevel =4;
     private String ExceptionType = "java.lang.ClassCastException";

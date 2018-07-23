@@ -26,6 +26,7 @@ import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.utils.LoggingUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import sun.rmi.runtime.Log;
 
@@ -35,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -43,23 +45,26 @@ import java.util.jar.JarInputStream;
 
 
 @NotThreadSafe
+@Ignore
 public class LANG_6b_Test {
 
     @Test
     public void lang_6b_frameLevel_1(){
-        boolean accessed = false;
+        boolean accessed =
+                false;
+        boolean modeling = true;
 
 
-        int targetFrame = 10;
+        int targetFrame = 2 ;
         String user_dir = System.getProperty("user.dir");
 
-        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","Lang-bins","LANG-9b");
-//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-7.4");
+//        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","MATH-bins","MATH-4b");
+        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-9.5");
 //        Path binpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","fake");
         String bin_path = binpath.toString();
 
-        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "LANG-9b" , "LANG-9b.log");
-//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-13031" , "XWIKI-13031.log");
+//        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "MATH-4b" , "MATH-4b.log");
+        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "XWIKI-14475" , "XWIKI-14475.log");
 //        Path logpath = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash", "fakeLog" , "fake.log");pwd
         String logPath = logpath.toString();
 
@@ -119,6 +124,23 @@ public class LANG_6b_Test {
             }
         }
 
+        }else if(modeling){
+            String allTestsJson = Paths.get(user_dir, "src", "test", "java", "org", "evosuite", "coverage","evocrash","XWIKI-14475.json").toString();
+            try {
+                JsonObject root = new JsonParser().parse(new FileReader(allTestsJson)).getAsJsonObject();
+                for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+                    JsonArray testsArray = entry.getValue().getAsJsonArray();
+                    for (int i=0;i <testsArray.size();i++){
+                        String existingTestPath = testsArray.get(i).getAsString().substring(0,testsArray.get(i).toString().lastIndexOf('.')-1);
+                        if (!jUnits.contains(existingTestPath)) {
+//                            System.out.println(existingTestPath);
+                            jUnits += (existingTestPath+":");
+                        }
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }else {
             // get the test cases from accessed_classes.json to use them for test case seeding or model seeding.
             try {
@@ -134,6 +156,7 @@ public class LANG_6b_Test {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
+//            jUnits="org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormat_ParserTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormatTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest:org.apache.commons.lang3.time.FastDateFormat_PrinterTest";
             System.out.println("JJ"+jUnits);
         }
 
@@ -167,15 +190,15 @@ public class LANG_6b_Test {
                 "-Dmodel_path=/Users/pooria/Desktop/CallSequencePoolJson",
                 "-Daccessed_classes_output_path="+accessed_output_file,
                 "-Dcall_Sequences_output_path="+call_sequences_file,
-                "-Dcarve_model=TRUE",
+                "-Dcarve_model=FALSE",
                 "-Djunit="+jUnits,
                 "-Dselected_junit=" + jUnits,
                 "-Dseed_mutations=0",
                 "-Dp_object_pool=0",
-                "-Dcarve_object_pool=FALSE",
+                "-Dcarve_object_pool=TRUE",
                 "-Dcollect_accessed_classes_in_tests=FALSE",
-                "-Dmodel_sut=FALSE",
-                "-Dproject_keyword=xwiki",
+                "-Dmodel_sut=TRUE",
+                "-Dproject_keyword=math",
                 "-Dtarget_exception_crash=java.lang.NullPointerException",
                 "-DEXP="+ logPath,
                 "-projectCP",

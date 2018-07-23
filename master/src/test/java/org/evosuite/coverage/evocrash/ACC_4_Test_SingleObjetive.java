@@ -33,10 +33,12 @@ import org.evosuite.result.TestGenerationResult;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.utils.LoggingUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
 @NotThreadSafe
+@Ignore
 public class ACC_4_Test_SingleObjetive {
 	
 	@Test
