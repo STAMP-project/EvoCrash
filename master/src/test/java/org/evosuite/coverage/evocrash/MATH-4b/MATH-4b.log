@@ -1,0 +1,4 @@
+java.lang.NullPointerException
+	at org.apache.commons.math3.geometry.euclidean.threed.Line.getAbscissa(Line.java:114)
+	at org.apache.commons.math3.geometry.euclidean.threed.Line.toSubSpace(Line.java:129)
+	at org.apache.commons.math3.geometry.euclidean.threed.SubLine.intersection(SubLine.java:116)
