@@ -1,3 +1,0 @@
-java.lang.ClassNotFoundException: byte
-	at org.apache.commons.lang3.SerializationUtils$ClassLoaderAwareObjectInputStream.resolveClass(SerializationUtils.java:268)
-	at org.apache.commons.lang3.SerializationUtils.clone(SerializationUtils.java:95)

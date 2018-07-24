@@ -1,7 +1,0 @@
-java.lang.ClassCastException: [Ljava.lang.Object; cannot be cast to java.lang.String
-	at com.xpn.xwiki.store.XWikiHibernateStore.searchDocumentReferencesInternal(XWikiHibernateStore.java:2457)
-	at com.xpn.xwiki.store.XWikiHibernateStore.searchDocumentsNamesInternal(XWikiHibernateStore.java:2440)
-	at com.xpn.xwiki.store.XWikiHibernateStore.searchDocumentsNames(XWikiHibernateStore.java:2246)
-	at com.xpn.xwiki.store.XWikiHibernateStore.searchDocumentsNames(XWikiHibernateStore.java:2230)
-	at com.xpn.xwiki.store.XWikiCacheStore.searchDocumentsNames(XWikiCacheStore.java:373)
-	at com.xpn.xwiki.api.XWiki.searchDocuments(XWiki.java:576)

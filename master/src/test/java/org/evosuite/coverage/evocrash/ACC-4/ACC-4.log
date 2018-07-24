@@ -1,2 +1,0 @@
-java.lang.NullPointerException: 
-at org.apache.commons.collections.CollectionUtils.cardinality(CollectionUtils.java:306)
